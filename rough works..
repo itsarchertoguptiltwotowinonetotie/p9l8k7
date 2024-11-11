@@ -1,0 +1,43 @@
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+
+public class DatabaseToTextArea extends JFrame {
+    private JTextArea textArea;
+
+    public DatabaseToTextArea() {
+        setTitle("Database Data in TextArea");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 300);
+        setLayout(new BorderLayout());
+
+        textArea = new JTextArea();
+        add(new JScrollPane(textArea), BorderLayout.CENTER);
+
+        try {
+            // Replace with your database credentials and query
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydatabase", "username", "password");
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM students");
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                int age = rs.getInt("age");
+                textArea.append(id + "\t" + name + "\t" + age + "\n");
+            }
+
+            rs.close();
+            stmt.close();
+            conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        new DatabaseToTextArea();
+    }
+}

@@ -69,7 +69,8 @@ class Insert extends JFrame {
                         }
                     }
                 } catch (Exception e1) {
-                    e1.printStackTrace();
+                    System.out.println(e1);
+                    System.out.println(e1.getMessage());
                 }
                 t1.setText(studentList.toString());
             }
@@ -90,7 +91,8 @@ class Insert extends JFrame {
                             rowsAffected + " record(s) deleted successfully." : "No records found with the ID: " + Integer.parseInt(x));
                     }
                 } catch (SQLException e2) {
-                    e2.printStackTrace();
+                    System.out.println(e2);
+                    System.out.println(e2.getMessage());
                 }
                 t1.append(studentList.toString());
             }
@@ -117,7 +119,8 @@ class Insert extends JFrame {
                         studentList.append("Adm_no and Name cannot be empty.");
                     }
                 } catch (Exception e3) {
-                    e3.printStackTrace();
+                    System.out.println(e3);
+                    System.out.println(e3.getMessage());
                 }
                 t1.append(studentList.toString());
             }
@@ -144,7 +147,8 @@ class Insert extends JFrame {
                         studentList.append("Adm_no and Name cannot be empty.");
                     }
                 } catch (Exception e4) {
-                    e4.printStackTrace();
+                    System.out.println(e4);
+                    System.out.println(e4.getMessage());
                 }
                 t1.append(studentList.toString());
             }

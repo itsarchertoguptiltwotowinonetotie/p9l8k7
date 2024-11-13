@@ -1,0 +1,32 @@
+package db_cms;
+import java.sql.*;
+import java.util.Scanner;
+import java.sql.PreparedStatement;
+
+public class SampleConnection {
+
+    public static void main(String[] args) {
+    	Scanner imp = new Scanner(System.in);
+    	System.out.println("Enter choice : ");
+    	int a = imp.nextInt();
+    	if(a==1) {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            Connection con=DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "humaira146");
+
+            Statement smt = con.createStatement();
+            ResultSet rs = smt.executeQuery("select * from students");
+
+            while (rs.next()) {
+                System.out.println(rs.getString(1)+"   "+rs.getString(2));
+            }
+
+            con.close();
+
+        } catch (Exception e) {
+            System.out.println(e);
+            System.out.println(e.getMessage());
+        }
+    	}
+    }
+}

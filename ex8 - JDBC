@@ -1,6 +1,9 @@
 package db_cms;
 
 import javax.swing.*;
+
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.*;
@@ -10,7 +13,7 @@ class Insert extends JFrame {
     private JTextField admField, nameField, rmAdmField;
     private JTextArea t1;
     private JButton insertButton, removeButton, displayAllButton, updateButton;
-    private JLabel l1, l2, l3;
+    private JLabel l1, l2, l3,l4;
 
     public Insert() {
         super("Insert Page");
@@ -20,39 +23,44 @@ class Insert extends JFrame {
         l1.setBounds(130, 50, 200, 50);
         add(l1);
         admField = new JTextField();
-        admField.setBounds(200, 50, 200, 50);
+        admField.setBounds(250, 50, 200, 50);
         add(admField);
 
         l2 = new JLabel("Name :");
-        l2.setBounds(440, 50, 200, 50);
+        l2.setBounds(130, 150, 200, 50);
         add(l2);
         nameField = new JTextField();
-        nameField.setBounds(500, 50, 200, 50);
+        nameField.setBounds(250, 150, 200, 50);
         add(nameField);
 
         insertButton = new JButton("Insert");
-        insertButton.setBounds(150, 250, 200, 50);
+        insertButton.setBounds(700, 50, 200, 50);
 
         updateButton = new JButton("Update");
-        updateButton.setBounds(400, 250, 200, 50);
+        updateButton.setBounds(700, 150, 200, 50);
 
         removeButton = new JButton("Remove");
-        removeButton.setBounds(650, 250, 200, 50);
+        removeButton.setBounds(700, 250, 200, 50);
 
         displayAllButton = new JButton("Display all");
-        displayAllButton.setBounds(900, 250, 200, 50);
+        displayAllButton.setBounds(1200, 450, 200, 50);
 
         t1 = new JTextArea();
-        t1.setBounds(100, 350, 1000, 250);
+        t1.setBounds(100, 450, 1000, 250);
         t1.setEditable(false);
 
         l3 = new JLabel("Adm_no to Remove:");
-        l3.setBounds(750, 50, 200, 50);
+        l3.setBounds(130, 250, 200, 50);
         add(l3);
 
         rmAdmField = new JTextField();
-        rmAdmField.setBounds(880, 50, 200, 50);
+        rmAdmField.setBounds(250, 250, 200, 50);
         add(rmAdmField);
+        
+        l4 = new JLabel("DataBase Output :");
+        l4.setBounds(130, 400, 300, 50);
+        l4.setFont(new Font("Tahoma", Font.PLAIN, 22));
+        add(l4);
 
         displayAllButton.addActionListener(new ActionListener() {
             @Override
@@ -162,7 +170,8 @@ class Insert extends JFrame {
         add(rmAdmField);
         add(l3);
 
-        setSize(1200, 800);
+        setSize(1500, 1000);
+        setBackground(Color.BLACK);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);

@@ -1,0 +1,95 @@
+package db_cms;
+import java.sql.*;
+import java.util.Scanner;
+import java.sql.PreparedStatement;
+
+public class SampleConnection {
+
+    public static void main(String[] args) {
+    	Scanner imp = new Scanner(System.in);
+    	while(true) {
+    	System.out.println("Enter choice : ");
+    	int a = imp.nextInt();
+    	if(a==1) {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            Connection con=DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "humaira146");
+
+            Statement smt = con.createStatement();
+            ResultSet rs = smt.executeQuery("select * from students");
+
+            while (rs.next()) {
+                System.out.println(rs.getString(1)+"   "+rs.getString(2));
+            }
+
+            con.close();
+
+        } catch (Exception e) {
+            System.out.println(e);
+            System.out.println(e.getMessage());
+        }
+    	}
+    	else if(a==2)
+    	{
+            System.out.print("Enter your id: ");
+            imp.nextLine();
+            String id = imp.nextLine();
+            System.out.print("Enter your name: ");
+            String name = imp.nextLine();
+            try {
+                Class.forName("com.mysql.jdbc.Driver");
+                Connection con=DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "humaira146");
+                PreparedStatement preparedStatement = null;
+
+                //Statement smt = con.createStatement();
+                //ResultSet rs = smt.executeQuery("select * from students");
+                String sql = "INSERT INTO students (Adm_no, name) VALUES (?, ?)";
+                preparedStatement = con.prepareStatement(sql);
+                preparedStatement.setString(1, id);
+                preparedStatement.setString(2, name);
+                int rowsAffected = preparedStatement.executeUpdate();
+                System.out.println(rowsAffected + " row(s) inserted.");
+
+                //while (rs.next()) {
+               //     System.out.println(rs.getString(1)+"   "+rs.getString(2));
+             //   }
+
+                con.close();
+
+            } catch (Exception e) {
+                System.out.println(e);
+                System.out.println(e.getMessage());
+            }
+    	}
+            else if(a==3) { 
+
+                Scanner scanner = new Scanner(System.in);
+
+                // Get user input for the id of the element to be deleted
+                System.out.print("Enter the ID of the record to delete: ");
+                int adm_no = scanner.nextInt();
+
+                // SQL Delete Query
+
+                try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "humaira146");
+                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM students WHERE Adm_no = ?")) {
+
+                    // Set the value for the ID
+                    pstmt.setInt(1, adm_no);
+
+                    // Execute the delete
+                    int rowsAffected = pstmt.executeUpdate();
+                    if (rowsAffected > 0) {
+                        System.out.println(rowsAffected + " record(s) deleted successfully.");
+                    } else {
+                        System.out.println("No records found with the ID: " + adm_no);
+                    }
+                    scanner.close();
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+    	}
+    }
+}

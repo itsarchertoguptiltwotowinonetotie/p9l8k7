@@ -1,0 +1,172 @@
+package db_cms;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+
+class Insert extends JFrame {
+
+    private JTextField admField, nameField, rmAdmField;
+    private JTextArea t1;
+    private JButton insertButton, removeButton, displayAllButton, updateButton;
+    private JLabel l1, l2, l3;
+
+    public Insert() {
+        super("Insert Page");
+        setLayout(null);
+
+        l1 = new JLabel("Adm_no :");
+        l1.setBounds(130, 50, 200, 50);
+        add(l1);
+        admField = new JTextField();
+        admField.setBounds(200, 50, 200, 50);
+        add(admField);
+
+        l2 = new JLabel("Name :");
+        l2.setBounds(440, 50, 200, 50);
+        add(l2);
+        nameField = new JTextField();
+        nameField.setBounds(500, 50, 200, 50);
+        add(nameField);
+
+        insertButton = new JButton("Insert");
+        insertButton.setBounds(150, 250, 200, 50);
+
+        updateButton = new JButton("Update");
+        updateButton.setBounds(400, 250, 200, 50);
+
+        removeButton = new JButton("Remove");
+        removeButton.setBounds(650, 250, 200, 50);
+
+        displayAllButton = new JButton("Display all");
+        displayAllButton.setBounds(900, 250, 200, 50);
+
+        t1 = new JTextArea();
+        t1.setBounds(100, 350, 1000, 250);
+        t1.setEditable(false);
+
+        l3 = new JLabel("Adm_no to Remove:");
+        l3.setBounds(750, 50, 200, 50);
+        add(l3);
+
+        rmAdmField = new JTextField();
+        rmAdmField.setBounds(880, 50, 200, 50);
+        add(rmAdmField);
+
+        displayAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                StringBuilder studentList = new StringBuilder("Registered Students:\n");
+                try {
+                    Class.forName("com.mysql.jdbc.Driver");
+                    try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "your_password");
+                        Statement smt = con.createStatement();
+                        ResultSet rs = smt.executeQuery("SELECT * FROM students")) {
+
+                        while (rs.next()) {
+                            studentList.append(rs.getString(1)).append("    -    ").append(rs.getString(2)).append("\n");
+                        }
+                    }
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+                t1.setText(studentList.toString());
+            }
+        });
+
+        removeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                StringBuilder studentList = new StringBuilder("\n");
+                try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "your_password");
+                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM students WHERE Adm_no = ?")) {
+                    
+                    String x = rmAdmField.getText();
+                    if (!x.isEmpty()) {
+                        pstmt.setInt(1, Integer.parseInt(x));    
+                        int rowsAffected = pstmt.executeUpdate();
+                        studentList.append(rowsAffected > 0 ? 
+                            rowsAffected + " record(s) deleted successfully." : "No records found with the ID: " + Integer.parseInt(x));
+                    }
+                } catch (SQLException e2) {
+                    e2.printStackTrace();
+                }
+                t1.append(studentList.toString());
+            }
+        });
+
+        insertButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                StringBuilder studentList = new StringBuilder("\n");
+                String x = admField.getText();
+                String y = nameField.getText();
+                try {
+                    if (!x.isEmpty() && !y.isEmpty()) {
+                        Class.forName("com.mysql.jdbc.Driver");
+                        try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "your_password");
+                             PreparedStatement preparedStatement = con.prepareStatement("INSERT INTO students (Adm_no, name) VALUES (?, ?)")) {
+                            
+                            preparedStatement.setString(1, x);
+                            preparedStatement.setString(2, y);
+                            int rowsAffected = preparedStatement.executeUpdate();
+                            studentList.append(rowsAffected).append(" row(s) inserted.");
+                        }
+                    } else {
+                        studentList.append("Adm_no and Name cannot be empty.");
+                    }
+                } catch (Exception e3) {
+                    e3.printStackTrace();
+                }
+                t1.append(studentList.toString());
+            }
+        });
+
+        updateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                StringBuilder studentList = new StringBuilder("\n");
+                String x = admField.getText();		
+                String y = nameField.getText();
+                try {
+                    if (!x.isEmpty() && !y.isEmpty()) {
+                        Class.forName("com.mysql.jdbc.Driver");
+                        try (Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/sample", "root", "your_password");
+                             PreparedStatement preparedStatement = con.prepareStatement("UPDATE students SET name = ? WHERE Adm_no = ?")) {
+                            
+                            preparedStatement.setString(1, y);
+                            preparedStatement.setString(2, x);
+                            int rowsAffected = preparedStatement.executeUpdate();
+                            studentList.append(rowsAffected).append(" row(s) updated.");
+                        }
+                    } else {
+                        studentList.append("Adm_no and Name cannot be empty.");
+                    }
+                } catch (Exception e4) {
+                    e4.printStackTrace();
+                }
+                t1.append(studentList.toString());
+            }
+        });
+        
+        add(insertButton);
+        add(removeButton);
+        add(updateButton);
+        add(displayAllButton);
+        add(t1);
+        add(rmAdmField);
+        add(l3);
+
+        setSize(1200, 800);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+}
+
+public class L_ogin {
+    public static void main(String[] args) {
+        new Insert();
+    }
+}

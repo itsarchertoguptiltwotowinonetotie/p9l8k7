@@ -1,0 +1,321 @@
+[23bcs065@mepcolinux ex7]$cat ex7.prn
+Script started on Tue 22 Oct 2024 12:06:25 PM IST
+[23bcs065@mepcolinux ex7]$cat head.h
+#include <iostream>
+using namespace std;
+
+class AVLTreeNode {
+public:
+    int info;
+    AVLTreeNode* lc;
+    AVLTreeNode* rc;
+    int height;
+public:
+
+    AVLTreeNode();
+    AVLTreeNode(int val);
+    ~AVLTreeNode();
+};
+
+class AVLTreeADT {
+public:
+    AVLTreeNode* root;
+public:
+
+    AVLTreeADT();
+    ~AVLTreeADT();
+
+    AVLTreeNode* insertion(AVLTreeNode* node, int data);
+    AVLTreeNode* singleRightRot(AVLTreeNode* y);
+    AVLTreeNode* singleLeftRot(AVLTreeNode* x);
+    AVLTreeNode* doubleRightRot(AVLTreeNode* z);
+    AVLTreeNode* doubleLeftRot(AVLTreeNode* z);
+    int findHeight(AVLTreeNode* node);
+    int getBalance(AVLTreeNode* node);
+    void makeempty(AVLTreeNode* node);
+    void inorder(AVLTreeNode* node);
+    void preorder(AVLTreeNode* node);
+    void postorder(AVLTreeNode* node);
+    AVLTreeNode* search(AVLTreeNode* node, int key);
+    AVLTreeNode* findMin(AVLTreeNode* node);
+    AVLTreeNode* findMax(AVLTreeNode* node);
+    void display();
+};
+[23bcs065@mepcolinux ex7]$cat imp1.cpp
+#include"head1.h"
+AVLTreeNode::AVLTreeNode(int val) {
+    left = NULL;
+    right = NULL;
+    height = 0;
+    data = val;
+}
+
+AVLTreeNode::~AVLTreeNode() {
+    left = NULL;
+    right = NULL;
+    height = -1;
+}
+
+AVL::AVL() {
+    root = NULL;
+}
+
+bool AVL::isEmpty() {
+    return root == NULL;
+}
+
+AVLTreeNode* AVL::insert(AVLTreeNode* temp, AVLTreeNode* newNode) {
+    if (temp == NULL) {
+        return newNode;
+        return root;
+    }
+    if (newNode->data < temp->data) {
+        temp->left = insert(temp->left, newNode);
+    } else if (newNode->data > temp->data) {
+        temp->right = insert(temp->right, newNode);
+    } else {
+        return temp;
+    }
+
+    temp->height = max(getHeight(temp->left), getHeight(temp->right)) + 1;
+    int balance = BF(temp);
+
+    if (balance > 1)
+     if (newNode->data < temp->left->data) {
+        return RightRotate(temp);
+    }
+    else
+    return LRRotate(temp);
+
+    if (balance < -1)
+     if(newNode->data > temp->right->data) {
+        return LeftRotate(temp);
+    }
+    else{
+        return RLRotate(temp);
+    }
+    return temp;
+}
+int AVL::getHeight(AVLTreeNode* myNode) {
+    if (myNode == NULL) {
+        return -1;
+    }
+    return myNode->height;
+}
+
+int AVL::BF(AVLTreeNode* myNode) {
+    if (myNode == NULL)
+        return 0;
+    return getHeight(myNode->left) - getHeight(myNode->right);
+}
+
+AVLTreeNode* AVL::RightRotate(AVLTreeNode* K3) {
+    AVLTreeNode* K2 = K3->left;
+    AVLTreeNode* temp = K2->right;
+    K2->right = K3;
+    K3->left = temp;
+
+    K3->height = max(getHeight(K3->left), getHeight(K3->right)) + 1;
+    K2->height = max(getHeight(K2->left), getHeight(K2->right)) + 1;
+
+    return K2;
+}
+
+AVLTreeNode* AVL::LeftRotate(AVLTreeNode* K1) {
+    AVLTreeNode* K2 = K1->right;
+    AVLTreeNode* temp = K2->left;
+    K2->left = K1;
+    K1->right = temp;
+
+    K1->height = max(getHeight(K1->left), getHeight(K1->right)) + 1;
+    K2->height = max(getHeight(K2->left), getHeight(K2->right)) + 1;
+
+    return K2;
+}
+
+AVLTreeNode* AVL::RLRotate(AVLTreeNode* K1) {
+    K1->right = RightRotate(K1->right);
+    return LeftRotate(K1);
+}
+
+AVLTreeNode* AVL::LRRotate(AVLTreeNode* K1) {
+    K1->left = LeftRotate(K1->left);
+    return RightRotate(K1);
+}
+
+AVLTreeNode* AVL::search(AVLTreeNode* temp, int elt) {
+    if (temp == NULL || temp->data == elt)
+        return temp;
+    else if (temp->data < elt)
+        return search(temp->right, elt);
+    else
+        return search(temp->left, elt);
+}
+
+int AVL::findmin(AVLTreeNode* temp) {
+    if (temp->left != NULL)
+        return findmin(temp->left);
+    else
+        return temp->data;
+}
+
+int AVL::findmax(AVLTreeNode* temp) {
+    if (temp->right != NULL)
+        return findmax(temp->right);
+    else
+        return temp->data;
+}
+
+void AVL::inorder(AVLTreeNode* temp) {
+    if (temp != NULL) {
+        inorder(temp->left);
+        cout << temp->data << " ";
+        inorder(temp->right);
+    }
+}
+
+void AVL::preorder(AVLTreeNode* temp) {
+    if (temp != NULL) {
+        cout << temp->data << " ";
+        preorder(temp->left);
+        preorder(temp->right);
+    }
+}
+
+void AVL::postorder(AVLTreeNode* temp) {
+    if (temp != NULL) {
+        postorder(temp->left);
+        postorder(temp->right);
+        cout << temp->data << " ";
+    }
+}
+[23bcs065@mepcolinux ex7]$cat app1.cpp
+#include"head1.h"
+int main() {
+    AVL myTree;
+    int choice, value;
+    cout << "\n---- AVL Tree Operations ----\n";
+    cout << "1. Insert Element\n";
+    cout << "2. Inorder Traversal\n";
+    cout << "3. Preorder Traversal\n";
+    cout << "4. Postorder Traversal\n";
+    cout << "5. Search Element\n";
+    cout << "6. Find Minimum\n";
+    cout << "7. Find Maximum\n";
+    cout << "8. Exit\n";
+    cout << "--------------------------------\n";
+    do {
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter the value to insert: ";
+                cin >> value;
+                myTree.root = myTree.insert(myTree.root, new AVLTreeNode(value));
+
+                break;
+            case 2:
+                cout << "Inorder Traversal: ";
+                myTree.inorder(myTree.root);
+                cout << endl;
+                break;
+            case 3:
+                cout << "Preorder Traversal: ";
+                myTree.preorder(myTree.root);
+                cout << endl;
+                break;
+            case 4:
+                cout << "Postorder Traversal: ";
+                myTree.postorder(myTree.root);
+                cout << endl;
+                break;
+            case 5:
+                cout << "Enter the element to search: ";
+                cin >> value;
+                if (myTree.search(myTree.root, value) != NULL) {
+                    cout << "Element found.\n";
+                } else {
+                    cout << "Element not found.\n";
+                }
+                break;
+            case 6:
+                if (!myTree.isEmpty()) {
+                    cout << "Minimum value: " << myTree.findmin(myTree.root) << endl;
+                } else {
+                    cout << "Tree is empty.\n";
+                }
+                break;
+            case 7:
+                if (!myTree.isEmpty()) {
+                    cout << "Maximum value: " << myTree.findmax(myTree.root) << endl;
+                } else {
+                    cout << "Tree is empty.\n";
+                }
+                break;
+           case 8:
+                cout << "Exiting program.\n";
+                break;
+            default:
+                cout << "Invalid choice! Please try again.\n";
+        }
+    } while (choice != 8);
+
+    return 0;
+}
+[23bcs065@mepcolinux ex7]$./exe
+
+---- AVL Tree Operations ----
+1. Insert Element
+2. Inorder Traversal
+3. Preorder Traversal
+4. Postorder Traversal
+5. Search Element
+6. Find Minimum
+7. Find Maximum
+8. Exit
+--------------------------------
+Enter your choice: 1
+Enter the value to insert: 14
+Enter your choice: 1
+Enter the value to insert: 17
+Enter your choice: 1
+Enter the value to insert: 11
+Enter your choice: 1
+Enter the value to insert: 7
+Enter your choice: 1
+Enter the value to insert: 53
+Enter your choice: 1
+Enter the value to insert: 4
+Enter your choice: 3
+Preorder Traversal: 14 7 4 11 17 53
+Enter your choice: 1
+Enter the value to insert: 13
+Enter your choice: 1
+Enter the value to insert: 12
+Enter your choice: 1
+Enter the value to insert: 8
+Enter your choice: 1
+Enter the value to insert: 60
+Enter your choice: 1
+Enter the value to insert: 19
+Enter your choice: 3
+Preorder Traversal: 14 11 7 4 8 12 13 53 17 19 60
+Enter your choice: 2
+Inorder Traversal: 4 7 8 11 12 13 14 17 19 53 60
+Enter your choice: 4
+Postorder Traversal: 4 8 7 13 12 11 19 17 60 53 14
+Enter your choice: 5
+Enter the element to search: 4
+Element found.
+Enter your choice: 6
+Minimum value: 4
+Enter your choice: 7
+Maximum value: 60
+Enter your choice: 8
+Exiting program.
+[23bcs065@mepcolinux ex7]$exit
+exit
+
+Script done on Tue 22 Oct 2024 12:07:24 PM IST
+[23bcs065@mepcolinux ex7]$

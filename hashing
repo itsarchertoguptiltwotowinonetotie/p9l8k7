@@ -1,0 +1,373 @@
+[23bcs065@mepcolinux ex9]$cat head.h
+#include <iostream>
+using namespace std;
+
+class HashTblADT {
+    int capacity;
+    int size;
+    int *data;
+    enum ProbingMethod { LINEAR, QUADRATIC };
+    ProbingMethod probingMethod;
+
+public:
+    HashTblADT();
+    ~HashTblADT();
+    void insert(int key);
+    void deleteElement(int key);
+    void searchElement(int key);
+    void display();
+    void getData();
+    int hash(int key);
+    void setProbingMethod();
+};
+[23bcs065@mepcolinux ex9]$cat imp.cpp
+#include"head.h"
+HashTblADT::HashTblADT() {
+    capacity = 10;
+    size = 0;
+    data = new int[capacity];
+    for (int i = 0; i < capacity; i++) data[i] = -1;
+    probingMethod = LINEAR;
+}
+HashTblADT::~HashTblADT() {
+    delete[] data;
+}
+int HashTblADT::hash(int key) {
+    return key % capacity;
+}
+void HashTblADT::insert(int key) {
+    if (size == capacity) {
+        cout << "Hash table is full!" << endl;
+        return;
+    }
+    int index = hash(key);
+    int i = 0;
+
+    while (data[index] != -1) {
+        if (probingMethod == LINEAR) {
+            index = (index + 1) % capacity;
+        } else if (probingMethod == QUADRATIC) {
+            index = (index + i * i) % capacity;
+            i++;
+        }
+    }
+    data[index] = key;
+    size++;
+    cout << key << " Inserted at the index " << index << " successfully." << endl;
+}
+void HashTblADT::deleteElement(int key) {
+    int index = hash(key);
+    int start = index;
+    int i = 0;
+
+    while (data[index] != -1) {
+        if (data[index] == key) {
+            data[index] = -1;
+            size--;
+            cout << "Deleted " << key << " successfully." << endl;
+            return;
+        }
+        if (probingMethod == LINEAR) {
+            index = (index + 1) % capacity;
+        } else if (probingMethod == QUADRATIC) {
+            index = (index + i * i) % capacity;
+            i++;
+        }
+        if (index == start) break;
+    }
+    cout << key << " not found in the hash table." << endl;
+}
+void HashTblADT::searchElement(int key) {
+    int index = hash(key);
+    int start = index;
+    int i = 0;
+
+    while (data[index] != -1) {
+        if (data[index] == key) {
+            cout << "Key found in the hash table" << endl;
+            return;
+        }
+        if (probingMethod == LINEAR) {
+            index = (index + 1) % capacity;
+        } else if (probingMethod == QUADRATIC) {
+            index = (index + i * i) % capacity;
+            i++;
+        }
+        if (index == start) {
+            break;
+        }
+    }
+
+    cout << "Key is not found in the hash table" << endl;
+}
+void HashTblADT::display() {
+    cout << "Hash Table contents:" << endl;
+    for (int i = 0; i < capacity; i++) {
+        if (data[i] >= 0)
+            cout << "[" << i << "] -> " << data[i] << endl; // Valid key
+        //else if (data[i] == -2)
+            //cout << "[" << i << "] -> Deleted" << endl; // Deleted marker
+        else
+            cout << "[" << i << "] -> Empty" << endl; // Empty slot
+    }
+}
+void HashTblADT::getData() {
+   cout<<"Size :" << size<<endl;
+   cout<<"Capacity :" <<capacity<<endl;
+    cout << "Hash Table Data: ";
+    for (int i = 0; i < capacity; ++i){
+       cout << data[i] << " ";
+    }
+    cout << endl;
+}
+void HashTblADT::setProbingMethod() {
+    int choice;
+    cout << "Choose Probing Method:" << endl;
+    cout << "1. Linear Probing" << endl;
+    cout << "2. Quadratic Probing" << endl;
+    cout << "Enter your choice (1 or 2): ";
+    cin >> choice;
+
+    if (choice == 1) {
+        probingMethod = LINEAR;
+        cout << "Probing method set to Linear Probing." << endl;
+    } else if (choice == 2) {
+        probingMethod = QUADRATIC;
+        cout << "Probing method set to Quadratic Probing." << endl;
+    } else {
+        cout << "Invalid choice! Defaulting to Linear Probing." << endl;
+        probingMethod = LINEAR;
+    }
+}
+[23bcs065@mepcolinux ex9]$cat app.cpp
+#include"head.h"
+int main() {
+    HashTblADT hashTable;
+    int choice, key;
+    hashTable.setProbingMethod();
+    cout << "\nHash Table Menu" << endl;
+    cout << "1. Insert Element" << endl;
+    cout << "2. Delete Element" << endl;
+    cout << "3. Search Element" << endl;
+    cout << "4. Display Hash Table" << endl;
+    cout << "5. Get Data" << endl;
+    cout << "6. Change Probing Method" << endl;
+    cout << "7. Exit" << endl;
+    do {
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter key to insert: ";
+                cin >> key;
+                hashTable.insert(key);
+                break;
+            case 2:
+                cout << "Enter key to delete: ";
+                cin >> key;
+                hashTable.deleteElement(key);
+                break;
+            case 3:
+                cout << "Enter key to search: ";
+                cin >> key;
+                hashTable.searchElement(key);
+                break;
+            case 4:
+                hashTable.display();
+                break;
+            case 5:
+                hashTable.getData();
+                break;
+            case 6:
+                hashTable.setProbingMethod();
+                break;
+            case 7:
+                cout << "Exiting program." << endl;
+                break;
+            default:
+                cout << "Invalid choice! Please try again." << endl;
+        }
+    } while (choice != 7);
+
+    return 0;
+}
+[23bcs065@mepcolinux ex9]$cat makefile
+exe:imp.o app.o
+        g++ imp.o app.o -o exe
+imp.o:imp.cpp
+        g++ -c imp.cpp
+app.o:app.cpp
+        g++ -c app.cpp
+[23bcs065@mepcolinux ex9]$cat ex9.prn
+Script started on Tue 29 Oct 2024 11:54:39 AM IST
+[23bcs065@mepcolinux ex9]$./exe
+Choose Probing Method:
+1. Linear Probing
+2. Quadratic Probing
+Enter your choice (1 or 2): 1
+Probing method set to Linear Probing.
+
+Hash Table Menu
+1. Insert Element
+2. Delete Element
+3. Search Element
+4. Display Hash Table
+5. Get Data
+6. Change Probing Method
+7. Exit
+Enter your choice: 1
+Enter key to insert: 0
+0 Inserted at the index 0 successfully.
+Enter your choice: 1
+Enter key to insert: 1
+1 Inserted at the index 1 successfully.
+Enter your choice: 1
+Enter key to insert: 4
+4 Inserted at the index 4 successfully.
+Enter your choice: 1
+Enter key to insert: 25
+25 Inserted at the index 5 successfully.
+Enter your choice: 1
+Enter key to insert: 26
+26 Inserted at the index 6 successfully.
+Enter your choice: 1
+Enter key to insert: 9
+9 Inserted at the index 9 successfully.
+Enter your choice: 1
+Enter key to insert: 81
+81 Inserted at the index 2 successfully.
+Enter your choice: 1
+Enter key to insert: 64
+64 Inserted at the index 7 successfully.
+Enter your choice: 1
+Enter key to insert: 36
+36 Inserted at the index 8 successfully.
+Enter your choice: 1
+Enter key to insert: 49
+49 Inserted at the index 3 successfully.
+Enter your choice: 4
+Hash Table contents:
+[0] -> 0
+[1] -> 1
+[2] -> 81
+[3] -> 49
+[4] -> 4
+[5] -> 25
+[6] -> 26
+[7] -> 64
+[8] -> 36
+[9] -> 9
+Enter your choice: 5
+Size :10
+Capacity :10
+Hash Table Data: 0 1 81 49 4 25 26 64 36 9
+Enter your choice: 3
+Enter key to search: 1
+Key found in the hash table
+Enter your choice: 2
+Enter key to delete: 0
+Deleted 0 successfully.
+Enter your choice: 4
+Hash Table contents:
+[0] -> Empty
+[1] -> 1
+[2] -> 81
+[3] -> 49
+[4] -> 4
+[5] -> 25
+[6] -> 26
+[7] -> 64
+[8] -> 36
+[9] -> 9
+Enter your choice: 7
+Exiting program.
+[23bcs065@mepcolinux ex9]$./exe
+Choose Probing Method:
+1. Linear Probing
+2. Quadratic Probing
+Enter your choice (1 or 2): 2
+Probing method set to Quadratic Probing.
+
+Hash Table Menu
+1. Insert Element
+2. Delete Element
+3. Search Element
+4. Display Hash Table
+5. Get Data
+6. Change Probing Method
+7. Exit
+Enter your choice: 1
+Enter key to insert: 0
+0 Inserted at the index 0 successfully.
+Enter your choice: 1
+Enter key to insert: 1
+1 Inserted at the index 1 successfully.
+Enter your choice: 1
+Enter key to insert: 4
+4 Inserted at the index 4 successfully.
+Enter your choice: 1
+Enter key to insert: 25
+25 Inserted at the index 5 successfully.
+Enter your choice: 1
+Enter key to insert: 16
+16 Inserted at the index 6 successfully.
+Enter your choice: 1
+Enter key to insert: 9
+9 Inserted at the index 9 successfully.
+Enter your choice: 1
+Enter key to insert: 81
+81 Inserted at the index 2 successfully.
+Enter your choice: 1
+Enter key to insert: 64
+64 Inserted at the index 8 successfully.
+Enter your choice: 1
+Enter key to insert: 36
+36 Inserted at the index 7 successfully.
+Enter your choice: 1
+Enter key to insert: 49
+49 Inserted at the index 3 successfully.
+Enter your choice: 4
+Hash Table contents:
+[0] -> 0
+[1] -> 1
+[2] -> 81
+[3] -> 49
+[4] -> 4
+[5] -> 25
+[6] -> 16
+[7] -> 36
+[8] -> 64
+[9] -> 9
+Enter your choice: 5
+Size :10
+Capacity :10
+Hash Table Data: 0 1 81 49 4 25 16 36 64 9
+Enter your choice: 2
+Enter key to delete: 1
+Deleted 1 successfully.
+Enter your choice: 1
+Enter key to insert: 11
+11 Inserted at the index 1 successfully.
+Enter your choice: 4
+Hash Table contents:
+[0] -> 0
+[1] -> 11
+[2] -> 81
+[3] -> 49
+[4] -> 4
+[5] -> 25
+[6] -> 16
+[7] -> 36
+[8] -> 64
+[9] -> 9
+Enter your choice: 3
+Enter key to search: 0
+Key found in the hash table
+Enter your choice: 7
+Exiting program.
+[23bcs065@mepcolinux ex9]$exit
+exit
+
+Script done on Tue 29 Oct 2024 11:59:52 AM IST
+[23bcs065@mepcolinux ex9]$

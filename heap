@@ -1,0 +1,230 @@
+[23bcs065@mepcolinux ex8]$cat ex8.prn
+Script started on Tue 29 Oct 2024 10:25:17 AM IST
+[23bcs065@mepcolinux ex8]$cat haed.h
+cat: haed.h: No such file or directory
+[23bcs065@mepcolinux ex8]$cat head.h
+#include<iostream>
+using namespace std;
+class PriHeap {
+    int capacity;
+    int size;
+    int* data;
+
+    void heapifyUp(int index);
+    void heapifyDown(int index);
+   public:
+    PriHeap(int cap);
+    ~PriHeap();
+
+    void enqueue(int value);
+    void dequeue();
+    bool isFull() ;
+    bool isEmpty() ;
+    int& findMinOrMax() ;
+    bool search(int value) ;
+    void displayHeap() ;
+};
+[23bcs065@mepcolinux ex8]$cat imp.cpp
+#include"head.h"
+
+PriHeap::PriHeap(int cap) {
+    capacity=cap;
+    size=0;
+    data = new int[capacity];
+}
+
+PriHeap::~PriHeap() {
+    delete[] data;  // Destructor to release the heap memory
+}
+
+bool PriHeap::isFull()  {
+    return size == capacity;
+}
+
+bool PriHeap::isEmpty()  {
+    return size == 0;
+}
+
+void PriHeap::enqueue(int value) {
+    if (isFull()) {
+        cout<<"Heap is full"<<endl;
+    }
+    data[size] = value;
+    size++;
+    heapifyUp(size - 1);
+    cout<<"Element "<<value<<" added succesfully"<< endl;
+}
+
+void PriHeap::dequeue() {
+    if (isEmpty()) {
+        cout<<"Heap is empty"<<endl;
+    }
+    data[0] = data[size - 1];
+    size--;
+    heapifyDown(0);
+    cout<<"Element is deleted"<<endl;
+}
+
+int& PriHeap::findMinOrMax() {
+    if (isEmpty()) {
+        cout<<"Heap is empty"<<endl;
+    }
+    return data[0];
+}
+
+bool PriHeap::search(int value) {
+    for (int i = 0; i < size; i++) {
+        if (data[i] == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void PriHeap::displayHeap() {
+    if (isEmpty()) {
+        cout << "Heap is empty" << endl;
+
+    }
+    for (int i = 0; i < size; i++) {
+        cout << data[i] << " ";
+    }
+    cout << endl;
+}
+
+void PriHeap::heapifyUp(int index) {
+    int parent = (index - 1) / 2;
+    while (index > 0 && data[index] > data[parent]) {
+        swap(data[index], data[parent]);
+        index = parent;
+        parent = (index - 1) / 2;
+    }
+}
+
+void PriHeap::heapifyDown(int index) {
+    int largest = index;
+    int leftChild = 2 * index + 1;
+    int rightChild = 2 * index + 2;
+
+    if (leftChild < size && data[leftChild] > data[largest]) {
+        largest = leftChild;
+    }
+    if (rightChild < size && data[rightChild] > data[largest]) {
+        largest = rightChild;
+    }
+    if (largest != index) {
+        swap(data[index], data[largest]);
+        heapifyDown(largest);
+    }
+}
+[23bcs065@mepcolinux ex8]$cat app.cpp
+#include"head.h"
+int main() {
+    int capacity;
+    cout << "Enter the capacity of the heap: ";
+    cin >> capacity;
+
+    PriHeap heap(capacity);
+
+    int choice, value;
+
+        cout << "\nHeap Operations:\n";
+        cout << "1. Enqueue (Insert)\n";
+        cout << "2. Dequeue (Remove Max)\n";
+        cout << "3. Find Max\n";
+        cout << "4. Search Element\n";
+        cout << "5. Display Heap\n";
+        cout << "6. Exit\n";
+        do{
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+        case 1:
+            cout << "Enter value to insert: ";
+            cin >> value;
+            heap.enqueue(value);
+            break;
+
+        case 2:
+            heap.dequeue();
+            break;
+
+        case 3:
+
+            cout << "Max value in the heap: " << heap.findMinOrMax() << endl;
+            break;
+
+        case 4:
+            cout << "Enter value to search: ";
+            cin >> value;
+            if (heap.search(value)) {
+                cout << "Element found in the heap." << endl;
+            } else {
+                cout << "Element not found in the heap." << endl;
+            }
+            break;
+
+        case 5:
+            cout << "Heap contents: ";
+            heap.displayHeap();
+            break;
+
+        case 6:
+            cout << "Exiting program." << endl;
+            break;
+
+        default:
+            cout << "Invalid choice!" << endl;
+        }
+    } while (choice != 6);
+
+    return 0;
+}
+[23bcs065@mepcolinux ex8]$./exe
+Enter the capacity of the heap: 7
+
+Heap Operations:
+1. Enqueue (Insert)
+2. Dequeue (Remove Max)
+3. Find Max
+4. Search Element
+5. Display Heap
+6. Exit
+Enter your choice: 1
+Enter value to insert: 10
+Element 10 added succesfully
+Enter your choice: 1
+Enter value to insert: 34
+Element 34 added succesfully
+Enter your choice: 1
+Enter value to insert: 56
+Element 56 added succesfully
+Enter your choice: 1
+Enter value to insert: 12
+Element 12 added succesfully
+Enter your choice: 1
+Enter value to insert: 45
+Element 45 added succesfully
+Enter your choice: 1
+Enter value to insert: 21
+Element 21 added succesfully
+Enter your choice: 1
+Enter value to insert: 41
+Element 41 added succesfully
+Enter your choice: 2
+Element is deleted
+Enter your choice: 2
+Element is deleted
+Enter your choice: 5
+Heap contents: 41 34 21 10 12
+Enter your choice: 4
+Enter value to search: 21
+Element found in the heap.
+Enter your choice: 6
+Exiting program.
+[23bcs065@mepcolinux ex8]$exit
+exit
+
+Script done on Tue 29 Oct 2024 10:26:56 AM IST
+[23bcs065@mepcolinux ex8]$

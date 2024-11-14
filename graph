@@ -1,0 +1,200 @@
+[23bcs065@mepcolinux ex10]$cat head.h
+#include <iostream>
+#include <queue>
+#include <cstdlib> // for rand()
+
+using namespace std;
+
+class Graph {
+    int *Data;
+    int noOfVertices;
+    bool *visited;
+    int **adjMatrix;
+
+public:
+    Graph(int numOfVertices);
+    ~Graph();
+    void createGraph();
+    void printadjacent();
+    void performDFS(); // DFS traversal
+    void performBFS(); // BFS traversal
+    int* getData();
+    void display();
+    void DFSUtil(int v); // Utility function for DFS
+
+    int rand() { return std::rand() % 100; } // Random data generation for each vertex
+};
+
+[23bcs065@mepcolinux ex10]$cat imp.cpp
+#include"head.h"
+Graph::Graph(int numOfVertices) {
+    this->noOfVertices = numOfVertices;
+    Data = new int[noOfVertices];
+    visited = new bool[noOfVertices];
+    adjMatrix = new int*[noOfVertices];
+    for (int i = 0; i < noOfVertices; i++) {
+        adjMatrix[i] = new int[noOfVertices];
+        visited[i] = false;
+        Data[i] = rand(); // Assigning random data to each vertex
+        for (int j = 0; j < noOfVertices; j++) {
+            adjMatrix[i][j] = 0;
+        }
+    }
+}
+
+// Destructor
+Graph::~Graph() {
+    delete[] Data;
+    delete[] visited;
+    for (int i = 0; i < noOfVertices; i++) {
+        delete[] adjMatrix[i];
+    }
+    delete[] adjMatrix;
+}
+
+// Function to create a graph
+void Graph::createGraph() {
+    int edges, src, dest;
+    cout << "Enter number of edges: ";
+    cin >> edges;
+    for (int i = 0; i < edges; i++) {
+        cout << "Enter source and destination (0-based index) of edge " << i + 1 << ": ";
+        cin >> src >> dest;
+        if (src >= 0 && src < noOfVertices && dest >= 0 && dest < noOfVertices) {
+            adjMatrix[src][dest] = 1;
+            adjMatrix[dest][src] = 1; // Assuming an undirected graph
+        } else {
+            cout << "Invalid edge!\n";
+        }
+    }
+}
+
+// Function to print adjacent vertices for each vertex
+void Graph::printadjacent() {
+    for (int i = 0; i < noOfVertices; i++) {
+        cout << "Adjacent vertices of vertex " << i << ": ";
+        for (int j = 0; j < noOfVertices; j++) {
+            if (adjMatrix[i][j] == 1) {
+                cout << j << " ";
+            }
+        }
+        cout << endl;
+    }
+}
+
+// Helper function for DFS traversal
+void Graph::DFSUtil(int v) {
+    visited[v] = true;
+    cout << v << " ";
+    for (int i = 0; i < noOfVertices; i++) {
+        if (adjMatrix[v][i] == 1 && !visited[i]) {
+            DFSUtil(i);
+        }
+    }
+}
+
+// Perform DFS traversal
+void Graph::performDFS() {
+    for (int i = 0; i < noOfVertices; i++) visited[i] = false;
+    cout << "DFS Traversal: ";
+    for (int i = 0; i < noOfVertices; i++) {
+        if (!visited[i]) {
+            DFSUtil(i);
+        }
+    }
+    cout << endl;
+}
+
+// Perform BFS traversal
+void Graph::performBFS() {
+    for (int i = 0; i < noOfVertices; i++) visited[i] = false;
+    queue<int> q;
+    cout << "BFS Traversal: ";
+    for (int i = 0; i < noOfVertices; i++) {
+        if (!visited[i]) {
+            visited[i] = true;
+            q.push(i);
+            while (!q.empty()) {
+                int vertex = q.front();
+                cout << vertex << " ";
+                q.pop();
+                for (int j = 0; j < noOfVertices; j++) {
+                    if (adjMatrix[vertex][j] == 1 && !visited[j]) {
+                        q.push(j);
+                        visited[j] = true;
+                    }
+                }
+            }
+        }
+    }
+    cout << endl;
+}
+
+// Get data of each vertex
+int* Graph::getData() {
+    return Data;
+}
+
+// Display data of each vertex
+void Graph::display() {
+    cout << "Data of vertices:\n";
+    for (int i = 0; i < noOfVertices; i++) {
+        cout << "Vertex " << i << ": " << Data[i] << endl;
+    }
+}
+[23bcs065@mepcolinux ex10]$cat app.cpp
+#include"head.h"
+int main() {
+    int vertices;
+    cout << "Enter the number of vertices in the graph: ";
+    cin >> vertices;
+
+    Graph graph(vertices);
+    int choice;
+
+    do {
+        cout << "\nMenu:\n";
+        cout << "1. Create Graph\n";
+        cout << "2. Print Adjacent Vertices\n";
+        cout << "3. Perform DFS Traversal\n";
+        cout << "4. Perform BFS Traversal\n";
+        cout << "5. Display Vertex Data\n";
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                graph.createGraph();
+                break;
+            case 2:
+                graph.printadjacent();
+                break;
+            case 3:
+                graph.performDFS();
+                break;
+            case 4:
+                graph.performBFS();
+                break;
+            case 5:
+                graph.display();
+                break;
+            case 6:
+                cout << "Exiting program.\n";
+                break;
+            default:
+                cout << "Invalid choice. Try again.\n";
+                break;
+        }
+    } while (choice != 6);
+
+    return 0;
+}
+[23bcs065@mepcolinux ex10]$cat makefile
+exe:imp.o app.o
+        g++ imp.o app.o -o test
+imp.o:imp.cpp
+        g++ -c imp.cpp
+app.o:app.cpp
+        g++ -c app.cpp
+[23bcs065@mepcolinux ex10]$

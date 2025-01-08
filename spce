@@ -1,0 +1,137 @@
+AIM
+	The Aim of the software is to control the scoreboard quickly and with least inputs delivering a wide range of updations in the displaying overlay or just the scoreboard.
+It's basically a cricket scoreboard control software that allows for real-time updates of scores on a ball-by-ball basis. This system is designed to meet the needs of cricket ground staff, match officials, and spectators by providing an attractive and efficient UI for managing match scores.
+
+INPUTS AND OUTPUTS
+	Input of runs, wickets, overs, and extras for both teams in real-time.
+	Display of live match data on physical scoreboards and digital screens.
+	Tracking of player statistics, such as individual runs, wickets taken, and bowling economy.
+	Additionally, analytics to enhance user experience and support strategic decision-making during matches.
+
+ROLES
+	Software Developers and Engineers : To understand technical requirements for implementation.
+	Project Managers: To Guide and review the p
+roject.
+	User Experience (UX) and User Interface (UI) Designers: To create an Optimized design.
+	Customers: Scorers, officials.
+	End Users: Spectators who will interact with the system.
+
+TERMINOLOGIES
+	API: Application Programming Interface, which allows different software components to communicate.
+	UI: User Interface, the part of the software that interacts directly with the users.
+	DB: Database, a systematic collection of data.
+	CRUD: Create, Read, Update, Delete, the four basic operations for persistent storage.
+
+DESCRIPTION
+
+Product Functions
+	The key functions of the software will include:
+	Score Management: Allowing users to enter runs, boundaries, and wickets as they occur.
+	Statistics Updation: Automatically updating player and team statistics in real time.
+	Match Event Management: Recording significant events such as power plays, reviews, and strikes.
+	Reporting: Generating reports for match analysis, team performance, and player statistics.
+
+OPERATING ENVIRONMENT
+	It is a web application feasible in all platforms and give a good attractive colourful UI for better view span of the end users which assists in improvement in the time spent by the end user in the websites whereas the ads are displayed on the borders of the web page for further revenue if required.
+
+DESIGN AND STANDARDS
+	Competitable with Broadcasting services (e.g., ICC standards).
+
+REQUIREMENTS
+	Score Input and Update
+		R1: The system shall enable scorers to enter runs, wickets, overs, and extras for each ball.
+			Example: For a ball that results in 4 runs and a wicket, the scorer can input “4” and select “Wicket” from the predefined options.
+		R2: The scoring interface shall allow for "undo" operations to correct any erroneous inputs during live scoring.
+
+	User Interface Requirements
+		R3: The main user interface will present match information (scores, overs, wickets) in an organized format for quick glances.
+			Example: Flashes of highlights when a team scores a boundary or a wicket is taken.
+		R4: The UI should allow customization of the display, providing users with options for color themes, font sizes, and arrangement of displayed elements.
+
+	Data Storage and Retrieval
+		R5: The system will historical match data to enable retrieval and analysis.
+ 			Example: Users can search for past matches by date, teams, or player performances.
+		R6: The system shall allow for user-generated notes and annotations to be associated with specific match events for later reference.
+
+	Notifications and Alerts
+		R7: The system must send real-time notifications for significant milestones like a player scoring their century, a bowler taking 5 wickets, or a team reaching a specific score.
+			Example: An alert system that pushes notifications to subscribed users through mobile or web.
+
+WORK FLOW
+
+CASE 1: Update Score
+Actors: Scorer
+Preconditions: The user must be logged into the system. The match must be in progress.
+Description: The scorer enters data (runs, balls faced, wickets) after each delivery.
+       1. The scorer selects the current bowler.
+       2. The scorer inputs the runs scored off the ball.
+       3. The system updates the total runs, overs, and wickets accordingly.
+       4. The scorer saves the entry.
+       (If the scorer makes an error, they use the "undo" function to correct it.)
+
+CASE 2: View Match Statistics
+Actors: Match Officials, Spectators
+Preconditions: The match is ongoing.
+Description: Users can access various statistics in real time.
+       1. The user navigates to the "Statistics" section.
+       2. The user receives an overview of team performance, including run rates and player contributions.
+       3. The user can filter statistics by individual players or teams.
+
+USER INTERFACE DESIGN
+
+Spectator display
+
+
+Scorer display
+
+
+Web Users display
+
+	Simple score                                                                   
+	Stastical score
+
+DATABASE AND LANGUAGE
+
+ORACLE is going to be our DataBase Software
+Front end is handled by JAVA
+
+	Major Entities:
+		Matches: MatchID, Date, Team1ID, Team2ID, WinnerID.
+		Scores ScoreID, MatchID, TeamID, Runs, Overs, Wickets.
+		Players: PlayerID, TeamID, Name, Role, PerformanceStats.
+(All the above mentioned entities will have sub entities and hold vast amount of data)
+
+
+DATA REDUNDANCY REDUCTION
+	The database design will follow rules so that data redundancy is eliminated and stats are fetched for respective locations instead of having a similar repeating slot. 
+
+TEST CASES
+
+Case 1: Verify Score Input
+
+    Objective: Ensure the score can be updated correctly.
+    Preconditions: User is logged in and match is active.
+   
+     1. Enter runs scored.
+     2. Save the entry.
+    Expected Outcome: The total score reflects the update correctly.
+
+Case 2: Verify Display of Notifications
+
+    Objective: Ensure that alerts for milestones are sent out.
+    Preconditions: A player reaches a century during a match.
+    
+     1. Monitor for alerts when the century is scored.
+    Expected Outcome: Users receive notifications within 5 seconds of the achievement.
+
+MAINTAINENCE AND SUPPORT
+	The final software product must pass all defined test cases, with fewer than 5 critical bugs outstanding.
+	Maintenance - The maintenance plan will include regular updates to improve functionality corresponding to the new laws and concepts such as impact player rule form IPL 2023.
+	Support - A team is assigned for support from the developer side because "our work ain't done once we produce a working model"
+
+CONCLUSION 
+	The cricket scoreboard control software aims achieve the process of real-time score management, making it accessible for all users involved in cricket matches. The sole purpose of the software is to control the scoreboard quickly and with least inputs delivering a wide range of updations in the displaying overlay or just the scoreboard.Future enhancements could include features such as predictive analytics using ML algorithms to project match outcomes based on live data, integration with social media for real-time event sharing, and improved mobile experiences for spectators attending matches.
+
+
+Reference and Source : Google scorecard system(As of 2025), livescore_2.7.0,cricket version(application software), Object Oriented Software engineering notes.
+

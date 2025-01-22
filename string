@@ -1,0 +1,56 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void search(char *sentence, char *pattern) {
+    int n = strlen(sentence);
+    int m = strlen(pattern);
+    int found = 0;
+    printf("Sentence: %s\n", sentence);
+    printf("Pattern: %s\n", pattern);
+    for (int i = 0; i <= n - m; i++) {
+        printf("%s\n", sentence);
+        for (int j = 0; j < i; j++) {
+            printf(" ");
+        }
+        printf("%s", pattern);
+        if (strncmp(&sentence[i], pattern, m) == 0) {
+            printf("\nThe pattern is found at the index %d.\n", i);
+            found = 1;
+            break; 
+        }
+        printf("\n");
+    }
+    if (!found) {
+        printf("The pattern is not found.\n");
+    }
+}
+
+int main() {
+    char *sentence;
+    char *pattern;
+    int n = 1000;
+    sentence = (char *)malloc(n * sizeof(char));
+    pattern = (char *)malloc(n * sizeof(char));
+    
+    if (sentence == NULL || pattern == NULL) {
+        printf("Memory allocation failed.\n");
+        return 1;
+    }
+    printf("Enter the sentence: ");
+    fgets(sentence, n, stdin);
+    if (sentence[strlen(sentence) - 1] == '\n') {
+        sentence[strlen(sentence) - 1] = '\0'; 
+    }
+    printf("Enter the pattern to be found: ");
+    fgets(pattern, n, stdin);
+    if (pattern[strlen(pattern) - 1] == '\n') {
+        pattern[strlen(pattern) - 1] = '\0'; 
+    }
+    search(sentence, pattern);
+
+    free(sentence);
+    free(pattern);
+
+    return 0;
+}

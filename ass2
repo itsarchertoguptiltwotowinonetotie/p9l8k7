@@ -1,0 +1,265 @@
+Relational Algebra queries
+
+    Listing of all Faculty Members, their Faculty Position, University, and Monthly_Dues
+
+Code
+
+Π FirstName, LastName, Position, University, (YearlyMembershipFee / 12) AS Monthly_Dues
+(σ Members.PositionID = Position.PositionID AND Members.CampusID = Campus.CampusID (Members ⨝ Position ⨝ Campus))
+ORDER BY University DESC, LastName ASC
+
+    Listing of various food items served (excluding alcoholic beverages)
+
+Code
+
+Π FoodItemName, MealType, MealPrice (σ Prices.MealType != 'Alcohol' (FoodItems ⨝ Prices))
+ORDER BY MealPrice ASC
+
+    Listing of orders with details
+
+Code
+
+Π OrderID, OrderDate, FacultyName, CampusName, FoodItemName, MealType, MealPrice, Quantity, (MealPrice * Quantity) AS LineTotal
+(σ Orders.MemberID = Members.MemberID AND Members.CampusID = Campus.CampusID AND Orders.OrderID = OrderLine.OrderID AND OrderLine.FoodItemsID = FoodItems.FoodItemID AND FoodItems.FoodItemTypeID = Prices.FoodItemTypeID (Orders ⨝ Members ⨝ Campus ⨝ OrderLine ⨝ FoodItems ⨝ Prices))
+ORDER BY OrderID DESC
+
+    Find the percentage discount for ‘Bob’
+
+Code
+
+Π CampusDiscount (σ Members.FirstName = 'Bob' (Members ⨝ Campus))
+
+    Total quantity ordered by each member as on today
+
+Code
+
+Π MemberID, MemberName, SUM(Quantity) AS TotalQuantity (σ Orders.OrderDate = '2025-02-12' (Orders ⨝ OrderLine ⨝ Members))
+GROUP BY MemberID, MemberName
+
+    Create a view to list all members living in the same area and their meal price
+
+Code
+
+CREATE VIEW Members_Area_MealPrice AS
+Π FirstName, LastName, CampusAddress, MealPrice (Members ⨝ Orders ⨝ OrderLine ⨝ FoodItems ⨝ Prices)
+
+    Create a trigger to calculate the 40% discount on meal price if yearly membership fees is > 100,000
+
+Code
+
+CREATE TRIGGER Apply_Meal_Discount
+BEFORE INSERT OR UPDATE ON Orders
+FOR EACH ROW
+BEGIN
+    IF (SELECT YearlyMembershipFee FROM Position WHERE PositionID = :NEW.PositionID) > 100000 THEN
+        :NEW.MealPrice := :NEW.MealPrice * 0.60;
+    END IF;
+END;
+
+    Function to return the order quantity for a given date
+
+Code
+
+CREATE FUNCTION GetOrderQuantity(p_order_date)
+RETURNS INTEGER AS
+BEGIN
+    RETURN SUM(OrderLine.Quantity) FROM Orders
+    JOIN OrderLine ON Orders.OrderID = OrderLine.OrderID
+    WHERE Orders.OrderDate = p_order_date;
+END;
+
+    Procedure to apply reduction on meal price with 15% discount if ordered on 15.01.15
+
+Code
+
+CREATE PROCEDURE Apply_Special_Discount AS
+BEGIN
+    UPDATE Prices
+    SET MealPrice = MealPrice * 0.85
+    WHERE EXISTS (
+        SELECT 1
+        FROM Orders
+        WHERE Orders.OrderDate = '2015-01-15'
+    );
+END;
+
+    Assertion to enter only vegetarian meal if the order day is Friday
+
+Code
+
+CREATE ASSERTION Vegetarian_Meal_On_Friday
+CHECK (
+    NOT EXISTS (
+        SELECT 1
+        FROM Orders
+        JOIN OrderLine ON Orders.OrderID = OrderLine.OrderID
+        JOIN FoodItems ON OrderLine.FoodItemsID = FoodItems.FoodItemID
+        JOIN Prices ON FoodItems.FoodItemTypeID = Prices.FoodItemTypeID
+        WHERE 
+            TO_CHAR(TO_DATE(Orders.OrderDate, 'YYYY-MM-DD'), 'DY') = 'FRI'
+            AND Prices.MealType != 'Vegetarian'
+    )
+);
+
+--------------------------------------------------------------------------------------------------
+
+-- Step 3: Create the queries in SQL
+
+-- 1. Listing of all Faculty Members, their Faculty Position, University, and Monthly_Dues
+SELECT 
+    Members.FirstName,
+    Members.LastName,
+    Position.Position,
+    Campus.CampusName AS University,
+    (Position.YearlyMembershipFee / 12) AS Monthly_Dues
+FROM 
+    Members
+JOIN 
+    Position ON Members.PositionID = Position.PositionID
+JOIN 
+    Campus ON Members.CampusID = Campus.CampusID
+ORDER BY 
+    University DESC, 
+    Members.LastName ASC;
+
+-- 2. Listing of various food items served (excluding alcoholic beverages)
+SELECT 
+    FoodItems.FoodItemName,
+    Prices.MealType,
+    Prices.MealPrice
+FROM 
+    FoodItems
+JOIN 
+    Prices ON FoodItems.FoodItemTypeID = Prices.FoodItemTypeID
+WHERE 
+    Prices.MealType NOT LIKE '%Alcohol%'
+ORDER BY 
+    Prices.MealPrice ASC;
+
+-- 3. Listing of orders with details
+SELECT 
+    Orders.OrderID,
+    Orders.OrderDate,
+    Members.FirstName || ' ' || Members.LastName AS FacultyName,
+    Campus.CampusName,
+    FoodItems.FoodItemName,
+    Prices.MealType,
+    Prices.MealPrice,
+    OrderLine.Quantity,
+    (Prices.MealPrice * OrderLine.Quantity) AS LineTotal
+FROM 
+    Orders
+JOIN 
+    Members ON Orders.MemberID = Members.MemberID
+JOIN 
+    Campus ON Members.CampusID = Campus.CampusID
+JOIN 
+    OrderLine ON Orders.OrderID = OrderLine.OrderID
+JOIN 
+    FoodItems ON OrderLine.FoodItemsID = FoodItems.FoodItemID
+JOIN 
+    Prices ON FoodItems.FoodItemTypeID = Prices.FoodItemTypeID
+ORDER BY 
+    Orders.OrderID DESC;
+
+-- 4. Find the percentage discount for ‘Bob’
+SELECT 
+    Campus.CampusDiscount
+FROM 
+    Members
+JOIN 
+    Campus ON Members.CampusID = Campus.CampusID
+WHERE 
+    Members.FirstName = 'Bob';
+
+-- 5. Total quantity ordered by each member as on today
+SELECT 
+    Members.MemberID,
+    Members.FirstName || ' ' || Members.LastName AS MemberName,
+    SUM(OrderLine.Quantity) AS TotalQuantity
+FROM 
+    Orders
+JOIN 
+    Members ON Orders.MemberID = Members.MemberID
+JOIN 
+    OrderLine ON Orders.OrderID = OrderLine.OrderID
+WHERE 
+    Orders.OrderDate = '2025-02-12'
+GROUP BY 
+    Members.MemberID, 
+    Members.FirstName, 
+    Members.LastName;
+
+-- 6. Create a view to list all members living in the same area and their meal price
+CREATE VIEW Members_Area_MealPrice AS
+SELECT 
+    Members.FirstName,
+    Members.LastName,
+    Members.CampusAddress,
+    Prices.MealPrice
+FROM 
+    Members
+JOIN 
+    Orders ON Members.MemberID = Orders.MemberID
+JOIN 
+    OrderLine ON Orders.OrderID = OrderLine.OrderID
+JOIN 
+    FoodItems ON OrderLine.FoodItemsID = FoodItems.FoodItemID
+JOIN 
+    Prices ON FoodItems.FoodItemTypeID = Prices.FoodItemTypeID;
+
+-- 7. Create a trigger to calculate the 40% discount on meal price if yearly membership fees is > 100,000
+CREATE OR REPLACE TRIGGER Apply_Meal_Discount
+BEFORE INSERT OR UPDATE ON Orders
+FOR EACH ROW
+BEGIN
+    IF (SELECT YearlyMembershipFee FROM Position WHERE PositionID = :NEW.PositionID) > 100000 THEN
+        :NEW.MealPrice := :NEW.MealPrice * 0.60;
+    END IF;
+END;
+
+-- 8. Function to return the order quantity for a given date
+CREATE OR REPLACE FUNCTION GetOrderQuantity(p_order_date VARCHAR2)
+RETURN INTEGER IS
+    v_total_quantity INTEGER;
+BEGIN
+    SELECT 
+        SUM(OrderLine.Quantity)
+    INTO 
+        v_total_quantity
+    FROM 
+        Orders
+    JOIN 
+        OrderLine ON Orders.OrderID = OrderLine.OrderID
+    WHERE 
+        Orders.OrderDate = p_order_date;
+        
+    RETURN v_total_quantity;
+END;
+
+-- 9. Procedure to apply reduction on meal price with 15% discount if ordered on 15.01.15
+CREATE OR REPLACE PROCEDURE Apply_Special_Discount IS
+BEGIN
+    UPDATE Prices
+    SET MealPrice = MealPrice * 0.85
+    WHERE EXISTS (
+        SELECT 1
+        FROM Orders
+        WHERE Orders.OrderDate = '2015-01-15'
+    );
+END;
+
+-- 10. Assertion to enter only vegetarian meal if the order day is Friday
+CREATE ASSERTION Vegetarian_Meal_On_Friday
+CHECK (
+    NOT EXISTS (
+        SELECT 1
+        FROM Orders
+        JOIN OrderLine ON Orders.OrderID = OrderLine.OrderID
+        JOIN FoodItems ON OrderLine.FoodItemsID = FoodItems.FoodItemID
+        JOIN Prices ON FoodItems.FoodItemTypeID = Prices.FoodItemTypeID
+        WHERE 
+            TO_CHAR(TO_DATE(Orders.OrderDate, 'YYYY-MM-DD'), 'DY') = 'FRI'
+            AND Prices.MealType != 'Vegetarian'
+    )
+);

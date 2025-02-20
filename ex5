@@ -1,0 +1,290 @@
+-- 1. Question: What is the average age of customers who have placed a bet amount greater than $500?
+SELECT AVG(customer_age) AS average_age
+FROM customer
+WHERE customer_id IN (
+    SELECT customer_id
+    FROM fantasy_11
+    WHERE bet_amount > 500
+);
+
+-- 2. Question: Which customers have been involved in matches held at 'Wankhede Stadium'?
+SELECT customer_name
+FROM customer
+WHERE customer_id IN (
+    SELECT customer_id
+    FROM fantasy_11
+    WHERE match_id IN (
+        SELECT match_id
+        FROM matches
+        WHERE match_venue = 'Wankhede Stadium'
+    )
+);
+
+-- 3. Question: What are the details of the teams that have the highest win percentage?
+SELECT *
+FROM teams
+WHERE team_id IN (
+    SELECT team_id
+    FROM points_table
+    WHERE win_percentage = (
+        SELECT MAX(win_percentage)
+        FROM points_table
+    )
+);
+
+-- 4. Question: List the names of players who have been picked in any fantasy team with a total credit less than 100.
+SELECT first_name, last_name
+FROM player
+WHERE player_id IN (
+    SELECT player_id
+    FROM picked
+    WHERE fantasy_id IN (
+        SELECT fantasy_id
+        FROM fantasy_11
+        WHERE total_credit < 100
+    )
+);
+
+-- 5. Question: Find the match details where the match fee is higher than the average match fee.
+SELECT *
+FROM matches
+WHERE match_fee > (
+    SELECT AVG(match_fee)
+    FROM matches
+);
+
+-- 6. Question: Which players have records in the 'Runs' category?
+SELECT first_name, last_name
+FROM player
+WHERE player_id IN (
+    SELECT player_id
+    FROM player_records
+    WHERE records = 'Runs'
+);
+
+-- 7. Question: What are the names of teams coached by 'Coach A'?
+SELECT team_name
+FROM teams
+WHERE team_id IN (
+    SELECT team_id
+    FROM coaches
+    WHERE coach_name = 'Coach A'
+);
+
+-- 8. Question: Find the fantasy teams where the captain has been picked as the MVP as well.
+SELECT fantasy_name
+FROM fantasy_11
+WHERE fantasy_id IN (
+    SELECT fantasy_id
+    FROM picked
+    WHERE player_id = (
+        SELECT mvp
+        FROM fantasy_11
+        WHERE fantasy_11.fantasy_id = picked.fantasy_id
+    )
+    AND player_id = (
+        SELECT captian
+        FROM fantasy_11
+        WHERE fantasy_11.fantasy_id = picked.fantasy_id
+    )
+);
+
+-- 9. Question: List the customers who have provided a rating of 5.
+SELECT customer_name
+FROM customer
+WHERE customer_id IN (
+    SELECT customer_id
+    FROM ratings
+    WHERE rating_provided = 5
+);
+
+-- 10. Question: Which matches have more audience count than the average audience count of all matches?
+SELECT *
+FROM matches
+WHERE audience_count > (
+    SELECT AVG(audience_count)
+    FROM matches
+);
+
+-- 11. Question: Find the teams that have played in matches with a ticket fee higher than $500.
+SELECT team_name
+FROM teams
+WHERE match_id IN (
+    SELECT match_id
+    FROM matches
+    WHERE ticket_fee > 500
+);
+
+-- 12. Question: List the players who have been involved in at least one match where the match type is 'Test'.
+SELECT first_name, last_name
+FROM player
+WHERE player_id IN (
+    SELECT player_id
+    FROM plays
+    WHERE team_id IN (
+        SELECT team_id
+        FROM teams
+        WHERE match_id IN (
+            SELECT match_id
+            FROM matches
+            WHERE match_type = 'Test'
+        )
+    )
+);
+
+-- 13. Question: What are the details of the balls where the runs scored are higher than the average runs scored per ball?
+SELECT *
+FROM balls
+WHERE runs > (
+    SELECT AVG(runs)
+    FROM balls
+);
+
+-- 14. Question: Find all players who have a jersey number less than 10 and have been part of a fantasy team.
+SELECT first_name, last_name
+FROM player
+WHERE jersey_number < 10
+AND player_id IN (
+    SELECT player_id
+    FROM picked
+);
+
+-- 15. Question: List the players who have not been picked in any fantasy team.
+SELECT first_name, last_name
+FROM player
+WHERE player_id NOT IN (
+    SELECT player_id
+    FROM picked
+);
+
+-- 16. Question: What are the names of the players who have never played a match for 'Mumbai Indians'?
+SELECT first_name, last_name
+FROM player
+WHERE player_id NOT IN (
+    SELECT player_id
+    FROM plays
+    WHERE team_id = (
+        SELECT team_id
+        FROM teams
+        WHERE team_name = 'Mumbai Indians'
+    )
+);
+
+-- 17. Question: Find the fantasy teams where the total credit is higher than the sum of credits for all players in that team.
+SELECT fantasy_name
+FROM fantasy_11
+WHERE total_credit > (
+    SELECT SUM("100_c" + "50_c" + runs_c + wickets_c + "4_c" + "6_c" + catch_c + run_out_c + stumping_c)
+    FROM credit
+    WHERE credit_id IN (
+        SELECT credit_id
+        FROM player
+        WHERE player_id IN (
+            SELECT player_id
+            FROM picked
+            WHERE fantasy_id = fantasy_11.fantasy_id
+        )
+    )
+);
+
+-- 18. Question: What is the highest run rate achieved in any ball?
+SELECT MAX(runrate) AS highest_run_rate
+FROM scorecard;
+
+-- 19. Question: List the details of overlays where the run rate is higher than the average run rate.
+SELECT *
+FROM overlay
+WHERE run_rate > (
+    SELECT AVG(run_rate)
+    FROM overlay
+);
+
+-- 20. Question: Find the players who have 'right' as their dominant arm and have scored more than 100 runs in any match.
+SELECT first_name, last_name
+FROM player
+WHERE dominant_arm = 'Right'
+AND player_id IN (
+    SELECT player_id
+    FROM player_records
+    WHERE records = 'Runs' AND runs > 100
+);
+
+-- 21. Question: What are the names of the players who have the highest sum of credits in 'Fantasy Team 1'?
+SELECT first_name, last_name
+FROM player
+WHERE player_id IN (
+    SELECT player_id
+    FROM picked
+    WHERE fantasy_id = (
+        SELECT fantasy_id
+        FROM fantasy_11
+        WHERE fantasy_name = 'Fantasy Team 1'
+    )
+)
+AND credit_id = (
+    SELECT credit_id
+    FROM credit
+    WHERE ("100_c" + "50_c" + runs_c + wickets_c + "4_c" + "6_c" + catch_c + run_out_c + stumping_c) = (
+        SELECT MAX("100_c" + "50_c" + runs_c + wickets_c + "4_c" + "6_c" + catch_c + run_out_c + stumping_c)
+        FROM credit
+    )
+);
+
+-- 22. Question: List the names of teams that have played in matches refereed by 'Referee A'.
+SELECT team_name
+FROM teams
+WHERE match_id IN (
+    SELECT match_id
+    FROM matches
+    WHERE match_refree = 'Referee A'
+);
+
+-- 23. Question: Find the customers who have placed bets in matches where the match type is 'ODI'.
+SELECT customer_name
+FROM customer
+WHERE customer_id IN (
+    SELECT customer_id
+    FROM fantasy_11
+    WHERE match_id IN (
+        SELECT match_id
+        FROM matches
+        WHERE match_type = 'ODI'
+    )
+);
+
+-- 24. Question: What are the names of players who have been picked in 'Fantasy Team 2'?
+SELECT first_name, last_name
+FROM player
+WHERE player_id IN (
+    SELECT player_id
+    FROM picked
+    WHERE fantasy_id = (
+        SELECT fantasy_id
+        FROM fantasy_11
+        WHERE fantasy_name = 'Fantasy Team 2'
+    )
+);
+
+-- 25. Question: List the players who have scored more than 50 runs in any match.
+SELECT first_name, last_name
+FROM player
+WHERE player_id IN (
+    SELECT player_id
+    FROM batsman
+    WHERE runs > ANY (
+        SELECT runs
+        FROM batsman
+    )
+);
+
+-- 26. Question: Find the teams that have played in matches with a match fee higher than the average match fee.
+SELECT team_name
+FROM teams
+WHERE match_id IN (
+    SELECT match_id
+    FROM matches
+    WHERE match_fee > ANY (
+        SELECT match_fee
+        FROM matches
+    )
+);

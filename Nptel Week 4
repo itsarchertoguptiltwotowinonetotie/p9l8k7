@@ -1,0 +1,131 @@
+class TreeNode:
+    def __init__(self, value):
+        self.value = value
+        self.children = []
+
+def build_tree(node_values):
+    if not node_values or node_values[0] == -1:
+        return None
+
+    root = TreeNode(node_values[0])
+    queue = [root]
+    
+    index = 1
+    while index < len(node_values):
+        current = queue.pop(0)
+        for _ in range(2):  # Binary tree means we will try to add 2 children
+            if index < len(node_values) and node_values[index] != -1:
+                child = TreeNode(node_values[index])
+                current.children.append(child)
+                queue.append(child)
+            index += 1
+            
+    return root
+
+def count_paths_to_sum(node, target_sum, current_sum=0):
+    if not node:
+        return 0
+
+    current_sum += node.value
+
+    # If a leaf node is reached
+    if not node.children:
+        return 1 if current_sum == target_sum else 0
+
+    count = 0
+    for child in node.children:
+        count += count_paths_to_sum(child, target_sum, current_sum)
+
+    return count
+
+def main():
+    t = int(input())
+    for _ in range(t):
+        n, p, r, years = map(int, input().split())
+        node_values = list(map(int, input().split()))
+        
+        # Calculate total amount due with interest
+        total_due = int(p + (p * r * years) // 100)
+        
+        # Build the tree
+        root = build_tree(node_values)
+        
+        # Count the paths
+        total_count = count_paths_to_sum(root, total_due)
+        
+        print(total_count)
+
+if __name__ == "__main__":
+    main()
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+
+from collections import deque
+
+def get_next_states(code):
+    next_states = []
+    for i in range(4):
+        digit = int(code[i])
+        # Move clockwise
+        new_code_cw = code[:i] + str((digit + 1) % 10) + code[i+1:]
+        next_states.append(new_code_cw)
+        # Move counterclockwise
+        new_code_ccw = code[:i] + str((digit - 1) % 10) + code[i+1:]
+        next_states.append(new_code_ccw)
+    return next_states
+
+def minimum_rotations_to_disarm(disarm_code, failsafe_set):
+    start = "0000"
+    if start == disarm_code:
+        return 0
+    if disarm_code in failsafe_set:
+        return -1
+    
+    visited = set()
+    queue = deque([(start, 0)])  # (current_combination, rotations_count)
+    visited.add(start)
+
+    while queue:
+        current_code, rotations = queue.popleft()
+        
+        for next_code in get_next_states(current_code):
+            if next_code not in visited and next_code not in failsafe_set:
+                if next_code == disarm_code:
+                    return rotations + 1
+                visited.add(next_code)
+                queue.append((next_code, rotations + 1))
+
+    return -1  # No valid path found
+
+def main():
+    import sys
+    input = sys.stdin.read
+    data = input().splitlines()
+    
+    idx = 0
+    t = int(data[idx])
+    idx += 1
+    results = []
+
+    for _ in range(t):
+        disarm_code = data[idx].strip()
+        idx += 1
+        n = int(data[idx])
+        idx += 1
+        
+        failsafe_set = set()
+        if n > 0:
+            failsafe_set = set(data[idx].strip().split())
+            idx += 1
+        
+        # Calculate the result for the current test case
+        result = minimum_rotations_to_disarm(disarm_code, failsafe_set)
+        results.append(result)
+    
+    # Output all results
+    sys.stdout.write('\n'.join(map(str, results)) + '\n')
+
+if __name__ == "__main__":
+    main()
+

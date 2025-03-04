@@ -1,0 +1,619 @@
+-- Setting server output on for displaying output
+SET SERVEROUTPUT ON;
+
+-- Anonymous PL/SQL Block to Update the Overs for a Format
+DECLARE
+    v_overs NUMBER;
+BEGIN
+    v_overs := 20;
+    UPDATE format SET overs = v_overs WHERE format_id = 'FMT01';
+    DBMS_OUTPUT.PUT_LINE('The overs for format FMT01 have been updated to: ' || v_overs);
+    COMMIT;
+END;
+/
+-- Output: The overs for format FMT01 have been updated to: 20
+
+-- Anonymous PL/SQL Block to Insert Data into Customer Table
+DECLARE
+    v_customer_id customer.customer_id%TYPE := 'CUST01';
+    v_customer_name customer.customer_name%TYPE := 'akilan';
+    v_customer_age customer.customer_age%TYPE := 30;
+    v_customer_email customer.email%TYPE := 'akilan@example.com';
+BEGIN
+    INSERT INTO customer (customer_id, customer_name, customer_age, email)
+    VALUES (v_customer_id, v_customer_name, v_customer_age, v_customer_email);
+    DBMS_OUTPUT.PUT_LINE('Customer ' || v_customer_name || ' has been added with ID ' || v_customer_id);
+    COMMIT;
+END;
+/
+-- Output: Customer akilan has been added with ID CUST01
+
+-- Anonymous PL/SQL Block to Calculate Total Audience Count for a Match
+DECLARE
+    v_total_audience NUMBER := 0;
+BEGIN
+    SELECT SUM(audience_count) INTO v_total_audience FROM matches WHERE format_id = 'FMT01';
+    DBMS_OUTPUT.PUT_LINE('Total audience count for format FMT01: ' || v_total_audience);
+    COMMIT;
+END;
+/
+-- Output: Total audience count for format FMT01: 45000
+
+-- Anonymous PL/SQL Block to Display Team Details
+DECLARE
+    v_team teams%ROWTYPE;
+BEGIN
+    SELECT * INTO v_team FROM teams WHERE team_id = 'TEAM01';
+    DBMS_OUTPUT.PUT_LINE('Team Name: ' || v_team.team_name);
+    DBMS_OUTPUT.PUT_LINE('Matches Played: ' || v_team.m_played);
+    DBMS_OUTPUT.PUT_LINE('Matches Won: ' || v_team.m_won);
+    DBMS_OUTPUT.PUT_LINE('Coach Name: ' || v_team.coach_name);
+END;
+/
+-- Output:
+-- Team Name: Chennai Super Kings
+-- Matches Played: 14
+-- Matches Won: 9
+-- Coach Name: Stephen Fleming
+
+-- Anonymous PL/SQL Block to Insert Data into Fantasy_11 Table
+DECLARE
+    v_fantasy_id fantasy_11.fantasy_id%TYPE := 'FANT01';
+    v_fantasy_name fantasy_11.fantasy_name%TYPE := 'Dream Team';
+    v_bet_amount fantasy_11.bet_amount%TYPE := 1000;
+    v_price_amount fantasy_11.price_amount%TYPE := 5000;
+BEGIN
+    INSERT INTO fantasy_11 (fantasy_id, fantasy_name, bet_amount, price_amount)
+    VALUES (v_fantasy_id, v_fantasy_name, v_bet_amount, v_price_amount);
+    DBMS_OUTPUT.PUT_LINE('Fantasy team ' || v_fantasy_name || ' has been added with ID ' || v_fantasy_id);
+    COMMIT;
+END;
+/
+-- Output: Fantasy team Dream Team has been added with ID FANT01
+
+-- Anonymous PL/SQL Block to Update Position in Leaderboard
+DECLARE
+    v_position NUMBER := 1;
+BEGIN
+    UPDATE leaderboard SET position = v_position WHERE leader_board_id = 'LDR01';
+    DBMS_OUTPUT.PUT_LINE('The position for leaderboard ID LDR01 has been updated to: ' || v_position);
+    COMMIT;
+END;
+/
+-- Output: The position for leaderboard ID LDR01 has been updated to: 1
+
+-- Anonymous PL/SQL Block to Display Points Table Details
+DECLARE
+    v_points_table points_table%ROWTYPE;
+BEGIN
+    SELECT * INTO v_points_table FROM points_table WHERE points_table_id = 'PT01';
+    DBMS_OUTPUT.PUT_LINE('Team ID: ' || v_points_table.team_id);
+    DBMS_OUTPUT.PUT_LINE('Position: ' || v_points_table.position);
+    DBMS_OUTPUT.PUT_LINE('Points: ' || v_points_table.points);
+    DBMS_OUTPUT.PUT_LINE('Matches Played: ' || v_points_table.m_played);
+END;
+/
+-- Output:
+-- Team ID: TEAM01
+-- Position: 1
+-- Points: 18
+-- Matches Played: 14
+
+-- Anonymous PL/SQL Block to Insert Data into Player Table
+DECLARE
+    v_player_id player.player_id%TYPE := 'PLY01';
+    v_first_name player.first_name%TYPE := 'MS';
+    v_last_name player.last_name%TYPE := 'Dhoni';
+    v_country player.country%TYPE := 'India';
+    v_gender player.gender%TYPE := 'Male';
+BEGIN
+    INSERT INTO player (player_id, first_name, last_name, country, gender)
+    VALUES (v_player_id, v_first_name, v_last_name, v_country, v_gender);
+    DBMS_OUTPUT.PUT_LINE('Player ' || v_first_name || ' ' || v_last_name || ' has been added with ID ' || v_player_id);
+    COMMIT;
+END;
+/
+-- Output: Player MS Dhoni has been added with ID PLY01
+
+-- Anonymous PL/SQL Block to Calculate Total Number of Wickets in Balls Table
+DECLARE
+    v_total_wickets NUMBER := 0;
+BEGIN
+    SELECT COUNT(*) INTO v_total_wickets FROM balls WHERE wicket IS NOT NULL;
+    DBMS_OUTPUT.PUT_LINE('Total number of wickets: ' || v_total_wickets);
+    COMMIT;
+END;
+/
+-- Output: Total number of wickets: 120
+
+-- Anonymous PL/SQL Block to Display Batsman Details
+DECLARE
+    v_batsman batsman%ROWTYPE;
+BEGIN
+    SELECT * INTO v_batsman FROM batsman WHERE batsman_id = 'BAT01';
+    DBMS_OUTPUT.PUT_LINE('Batsman Name: ' || v_batsman.first_name || ' ' || v_batsman.last_name);
+    DBMS_OUTPUT.PUT_LINE('Runs: ' || v_batsman.runs);
+    DBMS_OUTPUT.PUT_LINE('Balls Faced: ' || v_batsman.balls);
+END;
+/
+-- Output:
+-- Batsman Name: Virat Kohli
+-- Runs: 450
+-- Balls Faced: 320
+
+-- Anonymous PL/SQL Block to Display Bowler Details
+DECLARE
+    v_bowler bowler%ROWTYPE;
+BEGIN
+    SELECT * INTO v_bowler FROM bowler WHERE bowler_id = 'BWL01';
+    DBMS_OUTPUT.PUT_LINE('Bowler Name: ' || v_bowler.first_name || ' ' || v_bowler.last_name);
+    DBMS_OUTPUT.PUT_LINE('Wickets: ' || v_bowler.wickets);
+    DBMS_OUTPUT.PUT_LINE('Runs Conceded: ' || v_bowler.runs_conceeded);
+END;
+/
+-- Output:
+-- Bowler Name: Jasprit Bumrah
+-- Wickets: 20
+-- Runs Conceded: 300
+
+-- Anonymous PL/SQL Block to Insert Data into All_Rounder Table
+DECLARE
+    v_all_rounder_id all_rounder.all_rounder_id%TYPE := 'AR01';
+    v_first_name all_rounder.first_name%TYPE := 'Hardik';
+    v_last_name all_rounder.last_name%TYPE := 'Pandya';
+    v_country all_rounder.country%TYPE := 'India';
+    v_gender all_rounder.gender%TYPE := 'Male';
+BEGIN
+    INSERT INTO all_rounder (all_rounder_id, first_name, last_name, country, gender)
+    VALUES (v_all_rounder_id, v_first_name, v_last_name, v_country, v_gender);
+    DBMS_OUTPUT.PUT_LINE('All-Rounder ' || v_first_name || ' ' || v_last_name || ' has been added with ID ' || v_all_rounder_id);
+    COMMIT;
+END;
+/
+-- Output: All-Rounder Hardik Pandya has been added with ID AR01
+
+-- Anonymous PL/SQL Block to Update Credit Points
+DECLARE
+    v_100_c NUMBER := 50;
+BEGIN
+    UPDATE credit SET "100_c" = v_100_c WHERE credit_id = 'CR01';
+    DBMS_OUTPUT.PUT_LINE('The 100_c points for credit ID CR01 have been updated to: ' || v_100_c);
+    COMMIT;
+END;
+/
+-- Output: The 100_c points for credit ID CR01 have been updated to: 50
+
+-- Anonymous PL/SQL Block to Display Extras Details
+DECLARE
+    v_extras extras%ROWTYPE;
+BEGIN
+    SELECT * INTO v_extras FROM extras WHERE extra_id = 'EX01';
+    DBMS_OUTPUT.PUT_LINE('Extra Type: ' || v_extras.type);
+    DBMS_OUTPUT.PUT_LINE('Illegal Deliveries: ' || v_extras.illegal);
+    DBMS_OUTPUT.PUT_LINE('Legal Deliveries: ' || v_extras.legal);
+    DBMS_OUTPUT.PUT_LINE('Runs: ' || v_extras.runs);
+END;
+/
+-- Output:
+-- Extra Type: Wide
+-- Illegal Deliveries: 5
+-- Legal Deliveries: 150
+-- Runs: 10
+
+-- Anonymous PL/SQL Block to Insert Data into Scorecard Table
+DECLARE
+    v_time TIMESTAMP := TO_TIMESTAMP('2025-02-27 12:54:13', 'YYYY-MM-DD HH24:MI:SS');
+    v_runs NUMBER := 100;
+    v_wickets NUMBER := 3;
+BEGIN
+    INSERT INTO scorecard (time, runs, wickets)
+    VALUES (v_time, v_runs, v_wickets);
+    DBMS_OUTPUT.PUT_LINE('Scorecard entry added for time ' || TO_CHAR(v_time, 'YYYY-MM-DD HH24:MI:SS'));
+    COMMIT;
+END;
+/
+-- Output: Scorecard entry added for time 2025-02-27 12:54:13
+
+-- Anonymous PL/SQL Block to Display Notification Details
+DECLARE
+    v_notification notification%ROWTYPE;
+BEGIN
+    SELECT * INTO v_notification FROM notification WHERE notification_id = 'NT01';
+    DBMS_OUTPUT.PUT_LINE('Notification Domain: ' || v_notification.domain);
+    DBMS_OUTPUT.PUT_LINE('Notification Team: ' || v_notification.notification_team);
+    DBMS_OUTPUT.PUT_LINE('Notification Type: ' || v_notification.notification_type);
+END;
+/
+-- Output:
+-- Notification Domain: IPL
+-- Notification Team: Mumbai Indians
+-- Notification Type: Match Start
+
+-- Anonymous PL/SQL Block to Insert Data into Overlay Table
+DECLARE
+    v_time TIMESTAMP := TO_TIMESTAMP('2025-02-27 12:54:13', 'YYYY-MM-DD HH24:MI:SS');
+    v_striker VARCHAR2(255) := 'Rohit Sharma';
+    v_non_striker VARCHAR2(255) := 'Quinton de Kock';
+    v_total NUMBER := 150;
+BEGIN
+    INSERT INTO overlay (time, striker, non_striker, total)
+    VALUES (v_time, v_striker, v_non_striker, v_total);
+    DBMS_OUTPUT.PUT_LINE('Overlay entry added for time ' || TO_CHAR(v_time, 'YYYY-MM-DD HH24:MI:SS'));
+    COMMIT;
+END;
+/
+-- Output: Overlay entry added for time 2025-02-27 12:54:13
+
+-- Anonymous PL/SQL Block to Update Customer Age
+DECLARE
+    v_age NUMBER := 43;
+BEGIN
+    UPDATE customer SET customer_age = v_age WHERE customer_name = 'akilan';
+    DBMS_OUTPUT.PUT_LINE('The age of akilan has been updated to: ' || v_age);
+    COMMIT;
+END;
+/
+-- Output: The age of akilan has been updated to: 43
+
+-- Anonymous PL/SQL Block to Insert Data into Customer Table using %TYPE
+DECLARE
+    v_customer_name customer.customer_name%TYPE := 'venkatesh';
+    v_customer_id customer.customer_id%TYPE := 'CUST02';
+BEGIN
+    INSERT INTO customer (customer_id, customer_name) VALUES (v_customer_id, v_customer_name);
+    DBMS_OUTPUT.PUT_LINE('Customer ' || v_customer_name || ' has been added with ID ' || v_customer_id);
+    COMMIT;
+END;
+/
+-- Output: Customer venkatesh has been added with ID CUST02
+
+-- Anonymous PL/SQL Block to Calculate Total Balance for a Customer
+DECLARE
+    v_total_balance NUMBER := 0;
+BEGIN
+    SELECT SUM(ticket_fee) INTO v_total_balance FROM matches WHERE audience_count > 100;
+    DBMS_OUTPUT.PUT_LINE('Total balance for matches with audience count greater than 100: ' || v_total_balance);
+    COMMIT;
+END;
+/
+-- Output: Total balance for matches with audience count greater than 100: 45000
+
+-- Anonymous PL/SQL Block to Display Customer Details using %ROWTYPE
+DECLARE
+    v_customer customer%ROWTYPE;
+BEGIN
+    SELECT * INTO v_customer FROM customer WHERE customer_name = 'akilan';
+    DBMS_OUTPUT.PUT_LINE('Customer Name: ' || v_customer.customer_name);
+    DBMS_OUTPUT.PUT_LINE('Age: ' || v_customer.customer_age);
+    DBMS_OUTPUT.PUT_LINE('Email: ' || v_customer.email);
+END;
+/
+-- Output:
+-- Customer Name: akilan
+-- Age: 43
+-- Email: akilan@example.com
+
+-- Record Example with %ROWTYPE
+DECLARE
+    TYPE customer_record IS RECORD (
+        customer_name   customer.customer_name%TYPE,
+        customer_age    customer.customer_age%TYPE,
+        email           customer.email%TYPE
+    );
+    v_customer customer_record;
+BEGIN
+    SELECT customer_name, customer_age, email INTO v_customer FROM customer WHERE customer_name = 'akilan';
+    DBMS_OUTPUT.PUT_LINE('Customer Name: ' || v_customer.customer_name);
+    DBMS_OUTPUT.PUT_LINE('Age: ' || v_customer.customer_age);
+    DBMS_OUTPUT.PUT_LINE('Email: ' || v_customer.email);
+END;
+/
+-- Output:
+-- Customer Name: akilan
+-- Age: 43
+-- Email: akilan@example.com
+
+-- Record Example with a TYPE Declaration for Reusability
+DECLARE
+    TYPE customer_record IS RECORD (
+        customer_name   VARCHAR2(255),
+        customer_age    NUMBER,
+        email           VARCHAR2(255)
+    );
+    v_customer customer_record;
+BEGIN
+    v_customer.customer_name := 'pothi';
+    v_customer.customer_age := 45;
+    v_customer.email := 'pothi@example.com';
+    DBMS_OUTPUT.PUT_LINE('Customer Name: ' || v_customer.customer_name);
+    DBMS_OUTPUT.PUT_LINE('Age: ' || v_customer.customer_age);
+    DBMS_OUTPUT.PUT_LINE('Email: ' || v_customer.email);
+END;
+/
+-- Output:
+-- Customer Name: pothi
+-- Age: 45
+-- Email: pothi@example.com
+
+-- Example with Explicit Cursor
+DECLARE
+    v_customer_name customer.customer_name%TYPE;
+    v_match_fee matches.match_fee%TYPE;
+    CURSOR customer_cursor IS
+        SELECT c.customer_name, m.match_fee FROM customer c JOIN fantasy_11 f ON c.customer_id = f.customer_id JOIN matches m ON f.match_id = m.match_id WHERE c.customer_name = 'akilan';
+BEGIN
+    -- Using Explicit Cursor, Open and fetch data using the explicit cursor
+    OPEN customer_cursor;
+    FETCH customer_cursor INTO v_customer_name, v_match_fee;
+    DBMS_OUTPUT.PUT_LINE('Explicit Cursor - Customer: ' || v_customer_name || ', Match Fee: ' || v_match_fee);
+    CLOSE customer_cursor;
+END;
+/
+-- Output: Explicit Cursor - Customer: akilan, Match Fee: 2000
+
+-- Example with Implicit Cursor
+DECLARE
+    v_customer_name customer.customer_name%TYPE;
+    v_match_fee matches.match_fee%TYPE;
+BEGIN
+    SELECT c.customer_name, m.match_fee INTO v_customer_name, v_match_fee FROM customer c JOIN fantasy_11 f ON c.customer_id = f.customer_id JOIN matches m ON f.match_id = m.match_id WHERE c.customer_name = 'akilan';
+    DBMS_OUTPUT.PUT_LINE('Implicit Cursor - Customer: ' || v_customer_name || ', Match Fee: ' || v_match_fee);
+END;
+/
+-- Output: Implicit Cursor - Customer: akilan, Match Fee: 2000
+
+-- Example with Explicit Cursor Attributes
+DECLARE
+    v_customer_name customer.customer_name%TYPE;
+    v_match_fee matches.match_fee%TYPE;
+    CURSOR customer_cursor IS
+        SELECT c.customer_name, m.match_fee FROM customer c JOIN fantasy_11 f ON c.customer_id = f.customer_id JOIN matches m ON f.match_id = m.match_id;
+BEGIN
+    OPEN customer_cursor;
+    FETCH customer_cursor INTO v_customer_name, v_match_fee;
+    IF customer_cursor%FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('First row fetched - Customer: ' || v_customer_name || ', Match Fee: ' || v_match_fee);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('No rows found');
+    END IF;
+    FETCH customer_cursor INTO v_customer_name, v_match_fee;
+    IF customer_cursor%FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Second row fetched - Customer: ' || v_customer_name || ', Match Fee: ' || v_match_fee);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('No more rows available');
+    END IF;
+    DBMS_OUTPUT.PUT_LINE('Number of rows fetched so far: ' || customer_cursor%ROWCOUNT);
+    IF customer_cursor%ISOPEN THEN
+        DBMS_OUTPUT.PUT_LINE('Cursor is still open');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Cursor is closed');
+    END IF;
+    CLOSE customer_cursor;
+END;
+/
+-- Output:
+-- First row fetched - Customer: akilan, Match Fee: 2000
+-- Second row fetched - Customer: akash, Match Fee: 2500
+-- Number of rows fetched so far: 2
+-- Cursor is still open
+
+-- Anonymous PL/SQL Block with IF, ELSIF, and ELSE
+DECLARE
+    v_customer_name customer.customer_name%TYPE;
+    v_customer_age customer.customer_age%TYPE;
+BEGIN
+    -- Select the customer's name and age for a specific customer (example: akilan)
+    SELECT customer_name, customer_age INTO v_customer_name, v_customer_age FROM customer WHERE customer_name = 'akilan';
+
+    -- Conditional Logic to check the customer's age and print the appropriate message
+    IF v_customer_age < 30 THEN
+        DBMS_OUTPUT.PUT_LINE(v_customer_name || ' is Young.');
+    ELSIF v_customer_age >= 30 AND v_customer_age <= 50 THEN
+        DBMS_OUTPUT.PUT_LINE(v_customer_name || ' is Middle-aged.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE(v_customer_name || ' is Senior.');
+    END IF;
+END;
+/
+-- Output: akilan is Middle-aged.
+
+-- Setting server output on for displaying output
+SET SERVEROUTPUT ON;
+
+-- Basic Loop to display numbers from 1 to 5
+DECLARE
+    v_num NUMBER := 1;
+BEGIN
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+        v_num := v_num + 1;
+        EXIT WHEN v_num > 5;
+    END LOOP;
+END;
+/
+-- Output:
+-- Number: 1
+-- Number: 2
+-- Number: 3
+-- Number: 4
+-- Number: 5
+
+-- FOR Loop to print 1 to 5
+BEGIN
+    FOR v_num IN 1..5 LOOP
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+    END LOOP;
+END;
+/
+-- Output:
+-- Number: 1
+-- Number: 2
+-- Number: 3
+-- Number: 4
+-- Number: 5
+
+-- WHILE Loop to display numbers from 1 to 5
+DECLARE
+    v_num NUMBER := 1;
+BEGIN
+    WHILE v_num <= 5 LOOP
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+        v_num := v_num + 1;
+    END LOOP;
+END;
+/
+-- Output:
+-- Number: 1
+-- Number: 2
+-- Number: 3
+-- Number: 4
+-- Number: 5
+
+-- FOR Loop with Cursor (Explicit Cursor)
+DECLARE
+    CURSOR customer_cursor IS
+        SELECT customer_name FROM customer;
+BEGIN
+    FOR customer_record IN customer_cursor LOOP
+        DBMS_OUTPUT.PUT_LINE('Customer Name: ' || customer_record.customer_name);
+    END LOOP;
+END;
+/
+-- Output:
+-- Customer Name: [Customer Names]
+
+-- FOR Loop with Index Cursor (Implicit Cursor)
+BEGIN
+    FOR customer_record IN (SELECT customer_name FROM customer) LOOP
+        DBMS_OUTPUT.PUT_LINE('Customer Name: ' || customer_record.customer_name);
+    END LOOP;
+END;
+/
+-- Output:
+-- Customer Name: [Customer Names]
+
+-- EXIT and CONTINUE Statements
+DECLARE
+    v_num NUMBER := 0;
+BEGIN
+    FOR v_num IN 1..10 LOOP
+        IF v_num = 5 THEN
+            CONTINUE;  -- Skip the iteration when v_num is 5
+        END IF;
+
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+
+        IF v_num = 8 THEN
+            EXIT;  -- Exit the loop when v_num is 8
+        END IF;
+    END LOOP;
+END;
+/
+-- Output:
+-- Number: 1
+-- Number: 2
+-- Number: 3
+-- Number: 4
+-- Number: 6
+-- Number: 7
+-- Number: 8
+
+-- NO_DATA_FOUND Exception
+DECLARE
+    v_match_fee matches.match_fee%TYPE;
+BEGIN
+    SELECT match_fee INTO v_match_fee FROM matches WHERE match_id = '99999';  -- Non-existent match ID
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: No match found with the provided match ID.');
+END;
+/
+-- Output:
+-- Error: No match found with the provided match ID.
+
+-- TOO_MANY_ROWS Exception
+DECLARE
+    v_audience_count matches.audience_count%TYPE;
+BEGIN
+    SELECT audience_count INTO v_audience_count FROM matches WHERE format_id = 'FMT01';  -- Assuming multiple rows
+EXCEPTION
+    WHEN TOO_MANY_ROWS THEN
+        DBMS_OUTPUT.PUT_LINE('Error: More than one match found for this format.');
+END;
+/
+-- Output:
+-- Error: More than one match found for this format.
+
+-- ZERO_DIVIDE Exception
+DECLARE
+    v_total_runs NUMBER := 1000;  -- Example runs
+    v_total_wickets NUMBER := 0;  -- Zero wickets
+    v_average_runs NUMBER;
+BEGIN
+    -- Attempting to calculate the average runs (which will cause a division by zero)
+    v_average_runs := v_total_runs / v_total_wickets;
+
+    DBMS_OUTPUT.PUT_LINE('Average Runs: ' || v_average_runs);
+EXCEPTION
+    WHEN ZERO_DIVIDE THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Division by zero, number of wickets is zero.');
+END;
+/
+-- Output:
+-- Error: Division by zero, number of wickets is zero.
+
+-- VALUE_ERROR Exception
+DECLARE
+    v_runs VARCHAR2(10);
+    v_total_runs NUMBER;
+BEGIN
+    -- Assign a string that cannot be converted to a number
+    v_runs := 'ABC';  -- Invalid value for number
+    v_total_runs := TO_NUMBER(v_runs);  -- This will raise VALUE_ERROR
+
+EXCEPTION
+    WHEN VALUE_ERROR THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid value for number.');
+END;
+/
+-- Output:
+-- Error: Invalid value for number.
+
+-- OTHERS Exception (Catch-all exception handler)
+DECLARE
+    v_match_fee matches.match_fee%TYPE;
+BEGIN
+    -- Try to fetch the match fee for a non-existent match (assuming invalid match ID)
+    SELECT match_fee
+    INTO v_match_fee
+    FROM matches
+    WHERE match_id = '99999';  -- Non-existent match ID
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No match found with this ID.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+END;
+/
+-- Output:
+-- No match found with this ID.
+
+-- USER_DEFINED Exception (Custom exception)
+DECLARE
+    -- Declare a custom exception
+    e_negative_audience EXCEPTION;
+    v_audience_count NUMBER := -500;  -- Example of a negative audience count
+BEGIN
+    -- Check if the audience count is negative
+    IF v_audience_count < 0 THEN
+        RAISE e_negative_audience;  -- Raise the custom exception if audience count is negative
+    END IF;
+
+EXCEPTION
+    WHEN e_negative_audience THEN
+        DBMS_OUTPUT.PUT_LINE('Error: The audience count cannot be negative.');
+END;
+/
+-- Output:
+-- Error: The audience count cannot be negative.

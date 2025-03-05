@@ -1,0 +1,74 @@
+-- Anonymous PL/SQL Block with IF, ELSIF, and ELSE
+DECLARE
+    v_customer_name customer.customer_name%TYPE;
+    v_customer_age customer.customer_age%TYPE;
+BEGIN
+    -- Select the customer's name and age for a specific customer (gmail: akilan)
+    SELECT customer_name, customer_age INTO v_customer_name, v_customer_age FROM customer WHERE customer_name = 'akilan';
+
+    -- Conditional Logic to check the customer's age and print the appropriate message
+    IF v_customer_age < 30 THEN
+        DBMS_OUTPUT.PUT_LINE(v_customer_name || ' is Young.');
+    ELSIF v_customer_age >= 30 AND v_customer_age <= 50 THEN
+        DBMS_OUTPUT.PUT_LINE(v_customer_name || ' is Middle-aged.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE(v_customer_name || ' is Senior.');
+    END IF;
+END;
+/
+
+
+-- Basic Loop to display numbers from 1 to 5
+DECLARE
+    v_num NUMBER := 1;
+BEGIN
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+        v_num := v_num + 1;
+        EXIT WHEN v_num > 5;
+    END LOOP;
+END;
+/
+
+
+-- FOR Loop to print 1 to 5
+BEGIN
+    FOR v_num IN 1..5 LOOP
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+    END LOOP;
+END;
+/
+
+
+
+-- WHILE Loop to display numbers from 1 to 5
+DECLARE
+    v_num NUMBER := 1;
+BEGIN
+    WHILE v_num <= 5 LOOP
+        DBMS_OUTPUT.PUT_LINE('Number: ' || v_num);
+        v_num := v_num + 1;
+    END LOOP;
+END;
+/
+
+
+-- FOR Loop with Cursor (Explicit Cursor)
+DECLARE
+    CURSOR customer_cursor IS
+        SELECT customer_name FROM customer;
+BEGIN
+    FOR customer_record IN customer_cursor LOOP
+        DBMS_OUTPUT.PUT_LINE('Customer Name: ' || customer_record.customer_name);
+    END LOOP;
+END;
+/
+
+
+-- FOR Loop with Index Cursor (Implicit Cursor)
+BEGIN
+    FOR customer_record IN (SELECT customer_name FROM customer) LOOP
+        DBMS_OUTPUT.PUT_LINE('Customer Name: ' || customer_record.customer_name);
+    END LOOP;
+END;
+/

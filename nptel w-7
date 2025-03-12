@@ -1,0 +1,83 @@
+//1
+
+import sys
+import math
+import heapq
+
+def calculate_weight(X1, X2, X3, beta0, beta1, beta2, beta3):
+    prob = 1 / (1 + math.exp(- (beta0 + beta1 * X1 + beta2 * X2 + beta3 * X3)))
+    return -math.log(prob)
+
+def prim_mst(n, edges):
+    graph = [[] for _ in range(n + 1)]
+    
+    for u, v, weight in edges:
+        graph[u].append((weight, v))
+        graph[v].append((weight, u))
+    
+    total_cost = 0
+    visited = [False] * (n + 1)
+    min_heap = [(0, 1)]  # Start from node 1
+    num_edges_taken = 0
+
+    while min_heap:
+        weight, node = heapq.heappop(min_heap)
+
+        if visited[node]:
+            continue
+
+        visited[node] = True
+        total_cost += weight
+        num_edges_taken += 1
+
+        for next_weight, neighbor in graph[node]:
+            if not visited[neighbor]:
+                heapq.heappush(min_heap, (next_weight, neighbor))
+
+    return total_cost if num_edges_taken == n else -1
+
+def main():
+    input = sys.stdin.read
+    data = input().splitlines()
+
+    index = 0
+    t = int(data[index])
+    index += 1
+    results = []
+
+    for _ in range(t):
+        n, m, beta0, beta1, beta2, beta3 = data[index].split()
+        n = int(n)
+        m = int(m)
+        beta0 = float(beta0)
+        beta1 = float(beta1)
+        beta2 = float(beta2)
+        beta3 = float(beta3)
+        index += 1
+
+        edges = []
+
+        for _ in range(m):
+            u, v, X1, X2, X3 = data[index].split()
+            u = int(u)
+            v = int(v)
+            X1 = int(X1)
+            X2 = float(X2)
+            X3 = float(X3)
+
+            weight = calculate_weight(X1, X2, X3, beta0, beta1, beta2, beta3)
+            edges.append((u, v, weight))
+            index += 1
+
+        result = prim_mst(n, edges)
+        results.append(f"{result:.3f}" if result != -1 else "-1")
+
+    print("\n".join(results))
+
+if __name__ == "__main__":
+    main()
+
+
+----------------------------------------------------------------------------------------------------------
+
+// 2nd program enakkum thappa dha varudhu, nalaikku time irrukudhu la pah, paathukko

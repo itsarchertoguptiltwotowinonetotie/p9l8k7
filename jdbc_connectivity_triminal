@@ -1,5 +1,7 @@
-//jdbc connectivity
+//jdbc connectivity - replace with your driver file path and java file_name
 
-javac -cp ".;C:\Users\Pothiraju\Downloads\ojdbc11.jar" JdbcConnectOracle.java
+javac -cp ".;C:\Users\Pothiraju\Downloads\ojdbc11.jar" file_name.java // to compile
 
-java -cp ".;C:\Users\Pothiraju\Downloads\ojdbc11.jar" JdbcConnectOracle
+java -cp ".;C:\Users\Pothiraju\Downloads\ojdbc11.jar" file_name // to run
+
+//don't forget the ".;" before the driver path

@@ -1,0 +1,5 @@
+//jdbc connectivity
+
+javac -cp ".;C:\Users\Pothiraju\Downloads\ojdbc11.jar" JdbcConnectOracle.java
+
+java -cp ".;C:\Users\Pothiraju\Downloads\ojdbc11.jar" JdbcConnectOracle

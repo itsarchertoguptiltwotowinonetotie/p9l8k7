@@ -1,0 +1,1475 @@
+class ScoreUpdateFrame extends JFrame {
+
+    private String s2;
+    private String s1;
+
+    private int pos1;
+    private int crp;
+    private int pos2;
+    private int m = 1;
+
+    private JTable homePlayersTable;
+    private JTable awayPlayersTable;
+    private DefaultTableModel homeTableModel;
+    private DefaultTableModel awayTableModel;
+
+    private int homeRuns = 0;
+    private int homeBalls = 0;
+    private int homeWickets = 0;
+    private Integer homeTarget = 0;
+
+    private int awayRuns;
+    private int awayBalls;
+    private int awayWickets;
+    private Integer awayTarget = 0;
+
+    private JLabel homeScoreLabel;
+    private JLabel homeRunRateLabel;
+    private JLabel homeTargetLabel;
+
+    private JLabel awayScoreLabel;
+    private JLabel awayRunRateLabel;
+    private JLabel awayTargetLabel;
+
+    private JLabel homeTeamLogoLabel;
+    private JLabel awayTeamLogoLabel;
+
+    private JButton addRun1Button;
+    private JButton addRun2Button;
+    private JButton addRun3Button;
+    private JButton addRun4Button;
+    private JButton addRun6Button;
+    private JButton addWicketButton;
+    private JButton undoButton;
+    private JComboBox<String> extrasComboBox;
+    private JButton addExtraButton;
+    private JButton resetButton;
+
+    private Stack<Action> actionStack;
+
+    private boolean isAwayTeam;
+
+    private Connection conn;
+
+    private boolean homeInningsCompleted = false;
+    private boolean awayInningsCompleted = false;
+
+  /*CREATE OR REPLACE TRIGGER update_economy
+    AFTER UPDATE ON player_details
+    FOR EACH ROW
+    BEGIN
+        UPDATE bowler_details
+        SET economy = CASE
+                WHEN balls_bowled > 0 THEN runs_conceded / (balls_bowled / 6)
+                ELSE 0
+            END;
+END;
+/           */
+
+
+    private JComboBox<String> bowlerComboBox; // Add a JComboBox for selecting the bowler
+
+    private interface Action {
+        void undo();
+    }
+
+    public ScoreUpdateFrame() {
+        try {
+            conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+            initializeUI();
+            resetScores();
+            updateScoreLabels();
+            displayTeamLogos();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database connection error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+    }
+
+    private void resetScores() {
+
+        try {
+            conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+            PreparedStatement ps = conn.prepareStatement("update player_details set runs = 0 where 1=1");
+            ps.executeUpdate();
+            PreparedStatement ps2 = conn.prepareStatement("update player_details set balls = 0 where 1=1");
+            ps2.executeUpdate();
+            PreparedStatement ps3 = conn.prepareStatement("update player_details set strike_rate = 0 where 1=1");
+            ps3.executeUpdate();
+            PreparedStatement ps4 = conn.prepareStatement("update player_details set fours = 0 where 1=1");
+            ps4.executeUpdate();
+            PreparedStatement ps5 = conn.prepareStatement("update player_details set sixes = 0 where 1=1");
+            ps5.executeUpdate();
+            PreparedStatement ps6 = conn.prepareStatement("update bowler_details set runs_conceded = 0 where 1=1");
+            ps6.executeUpdate();
+            PreparedStatement ps7 = conn.prepareStatement("update bowler_details set balls_bowled = 0 where 1=1");
+            ps7.executeUpdate();
+            PreparedStatement ps8 = conn.prepareStatement("update bowler_details set overs_bowled = '0.0' where 1=1");
+            ps8.executeUpdate();
+            PreparedStatement ps9 = conn.prepareStatement("update bowler_details set maidens = 0 where 1=1");
+            ps9.executeUpdate();
+            PreparedStatement ps10 = conn.prepareStatement("update bowler_details set economy = 0 where 1=1");
+            ps10.executeUpdate();
+            PreparedStatement ps11 = conn.prepareStatement("update bowler_details set wickets = 0 where 1=1");
+            ps11.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        updatePlayerStats();
+        homeRuns = 0;
+        homeBalls = 0;
+        homeWickets = 0;
+        homeTarget = null; // Set target to null
+
+        awayRuns = 0;
+        awayBalls = 0;
+        awayWickets = 0;
+        awayTarget = null; // Set target to null
+
+        homeInningsCompleted = false;
+        awayInningsCompleted = false;
+
+        isAwayTeam = false; // Start with Home Team
+        
+        m=1;
+        pos1 = m;
+        m++;
+        pos2 = m;
+        m++;
+        crp = pos1;
+
+        actionStack.clear(); // Clear undo stack
+        updateScoreLabels(); // Update the UI labels
+    }
+
+    private void initializeUI() {
+        if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+            s1 = CricketScoreUpdatingSystem.ht;
+            s2 = CricketScoreUpdatingSystem.at;   
+        } else if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.fieldRadioButton.isSelected()) {
+            s1 = CricketScoreUpdatingSystem.at;
+            s2 = CricketScoreUpdatingSystem.ht;
+        } else if (CricketScoreUpdatingSystem.awayTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+            s1 = CricketScoreUpdatingSystem.at;
+            s2 = CricketScoreUpdatingSystem.ht;
+        } else {
+            s1 = CricketScoreUpdatingSystem.ht;
+            s2 = CricketScoreUpdatingSystem.at;   
+        }
+
+        // Add labels for team logos
+        homeTeamLogoLabel = new JLabel();
+        homeTeamLogoLabel.setBounds(50, 350, 150, 150); // Position near the home team JTable
+        add(homeTeamLogoLabel);
+
+        awayTeamLogoLabel = new JLabel();
+        awayTeamLogoLabel.setBounds(50, 580, 150, 150); // Position near the away team JTable
+        add(awayTeamLogoLabel);
+
+        JLabel l1 = new JLabel("Choose Bowler : ");
+        l1.setBounds(30, 230, 200, 30);
+        add(l1);
+
+        bowlerComboBox = new JComboBox<>();
+        bowlerComboBox.setBounds(170, 230, 200, 30);
+        add(bowlerComboBox);
+        
+        // Populate the bowler combo box based on the current batting team
+        populateBowlerComboBox();
+
+        setTitle("Live Score Update");
+        setSize(1600, 1000); 
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(null);
+
+        pos1 = m;
+        m++;
+        pos2 = m;
+        m++;
+        crp = pos1;
+        try {
+            conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+            PreparedStatement ps = conn.prepareStatement("update player_details set runs = 0 where 1=1");
+            ps.executeUpdate();
+            PreparedStatement ps2 = conn.prepareStatement("update player_details set balls = 0 where 1=1");
+            ps2.executeUpdate();
+            PreparedStatement ps3 = conn.prepareStatement("update player_details set strike_rate = 0 where 1=1");
+            ps3.executeUpdate();
+            PreparedStatement ps4 = conn.prepareStatement("update player_details set fours = 0 where 1=1");
+            ps4.executeUpdate();
+            PreparedStatement ps5 = conn.prepareStatement("update player_details set sixes = 0 where 1=1");
+            ps5.executeUpdate();
+            PreparedStatement ps6 = conn.prepareStatement("update bowler_details set wickets = 0 where 1=1");
+            ps6.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+
+        String[] columnNames = {"Player", "Runs", "Balls", "4s", "6s", "S/R","Overs","Runs_given","Wickets","Economy", "Position", "Team"};
+
+        if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.fieldRadioButton.isSelected()) {
+        homeTableModel = new DefaultTableModel(columnNames, 0);
+        homePlayersTable = new JTable(homeTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.ht : CricketScoreUpdatingSystem.at) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        homePlayersTable.setFillsViewportHeight(true);
+        JScrollPane homeScrollPane = new JScrollPane(homePlayersTable);
+        homeScrollPane.setBounds(250, 320, 1050, 200); 
+        add(homeScrollPane);
+
+        awayTableModel = new DefaultTableModel(columnNames, 0);
+        awayPlayersTable = new JTable(awayTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.ht : CricketScoreUpdatingSystem.at) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        awayPlayersTable.setFillsViewportHeight(true);
+        JScrollPane awayScrollPane = new JScrollPane(awayPlayersTable);
+        awayScrollPane.setBounds(250, 550, 1050, 200); 
+        add(awayScrollPane);
+    }
+    else if (CricketScoreUpdatingSystem.awayTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+        homeTableModel = new DefaultTableModel(columnNames, 0);
+        homePlayersTable = new JTable(homeTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.ht : CricketScoreUpdatingSystem.at) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        homePlayersTable.setFillsViewportHeight(true);
+        JScrollPane homeScrollPane = new JScrollPane(homePlayersTable);
+        homeScrollPane.setBounds(250, 320, 1050, 200); 
+        add(homeScrollPane);
+
+        awayTableModel = new DefaultTableModel(columnNames, 0);
+        awayPlayersTable = new JTable(awayTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.ht : CricketScoreUpdatingSystem.at) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        awayPlayersTable.setFillsViewportHeight(true);
+        JScrollPane awayScrollPane = new JScrollPane(awayPlayersTable);
+        awayScrollPane.setBounds(250, 550, 1050, 200); 
+        add(awayScrollPane);
+    }
+    else if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+        homeTableModel = new DefaultTableModel(columnNames, 0);
+        homePlayersTable = new JTable(homeTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.at : CricketScoreUpdatingSystem.ht) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        homePlayersTable.setFillsViewportHeight(true);
+        JScrollPane homeScrollPane = new JScrollPane(homePlayersTable);
+        homeScrollPane.setBounds(250, 320, 1050, 200); 
+        add(homeScrollPane);
+
+        awayTableModel = new DefaultTableModel(columnNames, 0);
+        awayPlayersTable = new JTable(awayTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.at : CricketScoreUpdatingSystem.ht) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        awayPlayersTable.setFillsViewportHeight(true);
+        JScrollPane awayScrollPane = new JScrollPane(awayPlayersTable);
+        awayScrollPane.setBounds(250, 550, 1050, 200); 
+        add(awayScrollPane);
+    }
+    else{
+        homeTableModel = new DefaultTableModel(columnNames, 0);
+        homePlayersTable = new JTable(homeTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.at : CricketScoreUpdatingSystem.ht) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        homePlayersTable.setFillsViewportHeight(true);
+        JScrollPane homeScrollPane = new JScrollPane(homePlayersTable);
+        homeScrollPane.setBounds(250, 320, 1050, 200); 
+        add(homeScrollPane);
+
+        awayTableModel = new DefaultTableModel(columnNames, 0);
+        awayPlayersTable = new JTable(awayTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                int position = (int) getValueAt(row, 10);  // Assuming 'Position' is at column index 10
+                String teamName = (String) getValueAt(row, 11);  // Assuming 'Team' is at column index 11
+                int maxPos = Math.max(pos1, pos2);
+                // Check if the team is the batting team
+                if (teamName.equals(isAwayTeam ? CricketScoreUpdatingSystem.at : CricketScoreUpdatingSystem.ht) && position < maxPos && position != pos1 && position != pos2) {
+                    c.setBackground(Color.RED);
+                } else {
+                    c.setBackground(getBackground());
+                }
+                return c;
+            }
+        };
+        awayPlayersTable.setFillsViewportHeight(true);
+        JScrollPane awayScrollPane = new JScrollPane(awayPlayersTable);
+        awayScrollPane.setBounds(250, 550, 1050, 200); 
+        add(awayScrollPane);
+    }
+
+        updatePlayerStats();
+
+        JPanel homePanel = new JPanel();
+        if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+            homePanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.ht));
+        } else if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.fieldRadioButton.isSelected()) {
+            homePanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.at));
+        } else if (CricketScoreUpdatingSystem.awayTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+            homePanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.at));
+        } else {
+            homePanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.ht));
+        }
+        homePanel.setBounds(0, 0, 750, 150); 
+        homePanel.setLayout(null); 
+
+        homeScoreLabel = new JLabel();
+        homeScoreLabel.setBounds(10, 20, 300, 30);
+        homePanel.add(homeScoreLabel);
+
+        homeRunRateLabel = new JLabel();
+        homeRunRateLabel.setBounds(10, 60, 300, 30);
+        homePanel.add(homeRunRateLabel);
+
+        homeTargetLabel = new JLabel(); 
+        homeTargetLabel.setBounds(10, 100, 300, 30);
+        homePanel.add(homeTargetLabel);
+
+        add(homePanel); 
+
+        JPanel awayPanel = new JPanel();
+        if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+            awayPanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.at));
+        } else if (CricketScoreUpdatingSystem.homeTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.fieldRadioButton.isSelected()) {
+            awayPanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.ht));
+        } else if (CricketScoreUpdatingSystem.awayTossWinnerRadioButton.isSelected() && CricketScoreUpdatingSystem.batRadioButton.isSelected()) {
+            awayPanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.ht));
+        } else {
+            awayPanel.setBorder(BorderFactory.createTitledBorder(CricketScoreUpdatingSystem.at));
+        }
+        awayPanel.setBounds(750, 0, 850, 150); 
+        awayPanel.setLayout(null); 
+
+        awayScoreLabel = new JLabel();
+        awayScoreLabel.setBounds(10, 20, 300, 30);
+        awayPanel.add(awayScoreLabel);
+
+        awayRunRateLabel = new JLabel();
+        awayRunRateLabel.setBounds(10, 60, 300, 30);
+        awayPanel.add(awayRunRateLabel);
+
+        awayTargetLabel = new JLabel(); 
+        awayTargetLabel.setBounds(10, 100, 300, 30);
+        awayPanel.add(awayTargetLabel);
+
+        add(awayPanel); 
+        int buttonWidth = 120;
+        int buttonHeight = 50;
+        int spacing = 20;
+        int startX = (1400 - (5 * buttonWidth + 4 * spacing)) / 2;
+
+        JPanel controlPanel = new JPanel();
+        controlPanel.setLayout(null);
+        controlPanel.setBounds(0, 150, 1400, 200);
+
+        JButton addWicketHomeButton = new JButton("<-- Wicket");
+        addWicketHomeButton.setBounds(60, 10, 120, 50);
+        addWicketHomeButton.addActionListener(e -> {
+            if (crp == pos1) {
+                pos1 = m;
+                m++;
+                crp = pos1;
+            } else if (crp == pos2) {
+                pos2 = m;
+                m++;
+                crp = pos2;
+            } else {
+                crp = pos1;
+            }
+            updatePlayerStats();
+            addWicketHomeTeam();
+        });
+        controlPanel.add(addWicketHomeButton);
+
+        addWicketButton = new JButton("Wicket -->");
+        addWicketButton.setBounds(startX + 4 * (buttonWidth + spacing) + 160+80+50+(buttonWidth/2), 10, 120, 50);
+        addWicketButton.addActionListener(e -> {
+            if (crp == pos1) {
+                pos1 = m;
+                m++;
+                crp = pos1;
+            } else if (crp == pos2) {
+                pos2 = m;
+                m++;
+                crp = pos2;
+            } else {
+                crp = pos1;
+            }
+            updatePlayerStats();
+            addWicket();
+        });
+        controlPanel.add(addWicketButton);
+
+        JButton addRun0Button = new JButton("Dot ball");
+        addRun0Button.setBounds(startX -140+50+(buttonWidth/2), 10, buttonWidth, buttonHeight);
+        addRun0Button.addActionListener(e -> {
+            add0todb(crp);
+            updatePlayerStats();
+            addRuns(0);});
+        controlPanel.add(addRun0Button);
+
+        addRun1Button = new JButton("1 Run");
+        addRun1Button.setBounds(startX +50+(buttonWidth/2), 10, buttonWidth, buttonHeight);
+        addRun1Button.addActionListener(e -> {
+            add1todb(crp);
+            if(crp == pos1){
+                crp = pos2;
+            }
+            else if(crp == pos2){
+                crp = pos1;
+            }
+            else{
+                crp = pos1;
+            }
+            updatePlayerStats();
+            addRuns(1);});
+        controlPanel.add(addRun1Button);
+
+        addRun2Button = new JButton("2 Runs");
+        addRun2Button.setBounds(startX+50 + buttonWidth + spacing+(buttonWidth/2), 10, buttonWidth, buttonHeight);
+        addRun2Button.addActionListener(e -> {
+            add2todb(crp);
+            updatePlayerStats();
+            addRuns(2);});
+        controlPanel.add(addRun2Button);
+
+        addRun3Button = new JButton("3 Runs");
+        addRun3Button.setBounds(startX + 2 * (buttonWidth + spacing)+50+(buttonWidth/2), 10, buttonWidth, buttonHeight);
+        addRun3Button.addActionListener(e -> {
+            add3todb(crp);
+            if(crp == pos1){
+                crp = pos2;
+            }
+            else if(crp == pos2){
+                crp = pos1;
+            }
+            else{
+                crp = pos1;
+            }
+            updatePlayerStats();
+            addRuns(3);});
+        controlPanel.add(addRun3Button);
+
+        addRun4Button = new JButton("4 Runs");
+        addRun4Button.setBounds(startX + 3 * (buttonWidth + spacing)+50+(buttonWidth/2), 10, buttonWidth, buttonHeight);
+        addRun4Button.addActionListener(e -> {
+            add4todb(crp);
+            updatePlayerStats();
+            addRuns(4);});
+        controlPanel.add(addRun4Button);
+
+        addRun6Button = new JButton("6 Runs");
+        addRun6Button.setBounds(startX + 4 * (buttonWidth + spacing)+50+(buttonWidth/2), 10, buttonWidth, buttonHeight);
+        addRun6Button.addActionListener(e -> {
+            add6todb(crp);
+            updatePlayerStats();
+            addRuns(6);});
+        controlPanel.add(addRun6Button);
+
+        String[] extrasOptions = {"Select Extra", "No-Ball", "Wide", "Bye", "Leg Bye"};
+        extrasComboBox = new JComboBox<>(extrasOptions);
+        extrasComboBox.setBounds(500 , 80, 150, 40); 
+        controlPanel.add(extrasComboBox);
+
+        addExtraButton = new JButton("Add Extra");
+        addExtraButton.setBounds(650 + 125, 80, 150, 40); 
+        addExtraButton.addActionListener(e -> addExtra());
+        controlPanel.add(addExtraButton);
+
+        resetButton = new JButton("Reset Scores");
+        resetButton.setBounds(startX + 4 * (buttonWidth + spacing) + 160+100, 80, 200, 50); 
+        resetButton.addActionListener(e -> resetScores());
+        controlPanel.add(resetButton);
+
+        add(controlPanel);
+        actionStack = new Stack<>();
+
+        add(controlPanel);
+
+        setVisible(true);
+        setLocationRelativeTo(null); 
+    }
+
+    private void populateBowlerComboBox() {
+        bowlerComboBox.removeAllItems();
+        List<String> bowlers = isAwayTeam ? CricketScoreUpdatingSystem.getPlayers(s1) : CricketScoreUpdatingSystem.getPlayers(s2);
+        for (String bowler : bowlers) {
+            bowlerComboBox.addItem(bowler);
+        }
+    }
+
+    private void updatePlayerStats() {
+        String player_name="";
+        int runs=0;
+        int balls=0;
+        int fours=0;
+        int sixes=0;
+        double strikeRate=0;
+        int balls_bowled=0;
+        String overs="";
+        int Runs_given=0;
+        int wickets=0;
+        int maidens=0;
+        int economy=0;
+        int position=0;
+        String team_name="";
+
+        homeTableModel.setRowCount(0);
+        awayTableModel.setRowCount(0);
+        String url = "jdbc:oracle:thin:@localhost:1521:xe"; 
+        String user = "system"; 
+        String password = "humaira146"; 
+
+        Connection conn = null;
+        Statement stmt = null;
+        Statement stmt1 = null;
+        ResultSet rs = null;
+
+        try {
+            conn = DriverManager.getConnection(url, user, password);
+            stmt = conn.createStatement();
+
+            String sql = "SELECT * FROM player_details natural join teams natural join bowler_details where team_name LIKE '"+CricketScoreUpdatingSystem.ht+"' order by position";
+            rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                player_name = rs.getString("first_name") + " " + rs.getString("last_name");
+                runs = rs.getInt("runs");
+                balls = rs.getInt("balls");
+                fours = rs.getInt("fours");
+                sixes = rs.getInt("sixes");
+                strikeRate = rs.getDouble("strike_rate");
+                balls_bowled = rs.getInt("balls_bowled");
+                overs = rs.getString("overs_bowled");
+                Runs_given = rs.getInt("runs_conceded");
+                wickets = rs.getInt("wickets");
+                economy = rs.getInt("economy");  
+                position = rs.getInt("position");
+                team_name = rs.getString("team_name");
+                homeTableModel.addRow(new Object[]{player_name, runs, balls, fours, sixes, strikeRate, overs,Runs_given,wickets,economy, position, team_name});
+            }
+           
+            stmt1 = conn.createStatement();
+
+            String sql1 = "SELECT * FROM player_details natural join teams natural join bowler_details where team_name LIKE '"+CricketScoreUpdatingSystem.at+"' order by position";
+            rs = stmt1.executeQuery(sql1);
+            //System.out.println(CricketScoreUpdatingSystem.at);
+
+            while (rs.next()) {
+                player_name = rs.getString("first_name") + " " + rs.getString("last_name");
+                runs = rs.getInt("runs");
+                balls = rs.getInt("balls");
+                fours = rs.getInt("fours");
+                sixes = rs.getInt("sixes");
+                strikeRate = rs.getDouble("strike_rate");
+                balls_bowled = rs.getInt("balls_bowled");
+                overs = rs.getString("overs_bowled");
+                Runs_given = rs.getInt("runs_conceded");
+                wickets = rs.getInt("wickets");
+                economy = rs.getInt("economy");  
+                position = rs.getInt("position");
+                team_name = rs.getString("team_name");
+                awayTableModel.addRow(new Object[]{player_name, runs, balls, fours, sixes, strikeRate, overs,Runs_given,wickets,economy, position, team_name});                
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    private void addRuns(int runsToAdd) {
+        if (isAwayTeam) {
+            if (!awayInningsCompleted) {
+                awayRuns += runsToAdd;
+                awayBalls++;
+    
+                // Check if an over is completed
+                if (awayBalls % 6 == 0) {
+                    promptBowlerChange();
+                }
+    
+                actionStack.push(() -> {
+                    awayRuns -= runsToAdd;
+                    awayBalls--;
+                    updateScoreLabels();
+                });
+                updateScoreLabels();
+                checkTargetReached();
+                checkInningsStatus();
+            } else {
+                JOptionPane.showMessageDialog(this, "Away Team innings already completed.");
+            }
+        } else {
+            if (!homeInningsCompleted) {
+                homeRuns += runsToAdd;
+                homeBalls++;
+    
+                // Check if an over is completed
+                if (homeBalls % 6 == 0) {
+                    promptBowlerChange();
+                }
+    
+                actionStack.push(() -> {
+                    homeRuns -= runsToAdd;
+                    homeBalls--;
+                    updateScoreLabels();
+                });
+                updateScoreLabels();
+                checkInningsStatus();
+            } else {
+                JOptionPane.showMessageDialog(this, "Home Team innings already completed.");
+            }
+        }
+    }
+    private void addWicket() {
+        if (isAwayTeam) {
+            if (!awayInningsCompleted) {
+                awayWickets++;
+                awayBalls++;
+    
+                // Check if an over is completed
+                if (awayBalls % 6 == 0) {
+                    promptBowlerChange();
+                }
+    
+                String selectedBowler = (String) bowlerComboBox.getSelectedItem();
+                updateBowlerWickets(selectedBowler);
+    
+                actionStack.push(() -> {
+                    awayWickets--;
+                    awayBalls--;
+                    updateScoreLabels();
+                });
+                updateScoreLabels();
+                updatePlayerStats();
+    
+                if (awayWickets >= 10) {
+                    awayInningsCompleted = true;
+                    JOptionPane.showMessageDialog(this, "Away Team innings completed! Total runs: " + awayRuns);
+                    checkFinalResult();
+                }
+    
+                checkTargetReached();
+            } else {
+                JOptionPane.showMessageDialog(this, "Away Team innings already completed.");
+            }
+        }
+    }
+    private void updateBowlerWickets(String bowler) {
+        try {
+            conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+            String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+            PreparedStatement ps = conn.prepareStatement("UPDATE bowler_details SET wickets = wickets + 1, balls_bowled = balls_bowled + 1  WHERE first_name || ' ' || last_name = ?");
+            ps.setString(1, bowler);
+            ps.executeUpdate();
+           // PreparedStatement ps1 = conn.prepareStatement("UPDATE bowler_details SET balls_bowled = balls_bowled + 1 WHERE first_name || ' ' || last_name = ?");
+           // ps1.setString(1, bowler);
+            //ps1.executeUpdate();
+            PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+        private void checkFinalResult() {
+            if (homeInningsCompleted && awayInningsCompleted) {
+                String resultMessage;
+                if (awayRuns > homeRuns) {
+                    int wicketsRemaining = 10 - awayWickets;
+                    resultMessage = "Away Team wins by " + wicketsRemaining + " wickets!";
+                    resetScores();
+                } else if (homeRuns > awayRuns) {
+                    int wicketsRemaining = 10 - homeWickets;
+                    resultMessage = "Home Team wins by " + wicketsRemaining + " wickets!";
+                    resetScores();
+                } else {
+                    resultMessage = "The match is a tie!";
+                    resetScores();
+                }
+                JOptionPane.showMessageDialog(this, resultMessage);
+            }
+        }
+        private void addWicketHomeTeam() {
+            if (!homeInningsCompleted) {
+                homeWickets++;
+                homeBalls++;
+    
+                String selectedBowler = (String) bowlerComboBox.getSelectedItem();
+                updateBowlerWickets(selectedBowler);
+    
+                actionStack.push(() -> {
+                    homeWickets--;
+                    homeBalls--;
+                    updateScoreLabels();
+                });
+    
+                updateScoreLabels();
+                updatePlayerStats();
+    
+                if (homeWickets >= 10) {
+                    homeInningsCompleted = true;
+                    awayTarget = homeRuns + 1;
+                    JOptionPane.showMessageDialog(this, "Home Team innings completed! Total runs: " + homeRuns + ". Target for Away Team: " + awayTarget);
+                    startAwayTeamInnings();
+                    checkFinalResult();
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Home Team innings already completed.");
+            }
+        }
+    
+        private void startAwayTeamInnings() {
+            // Resetting the away team's score and wickets
+            awayRuns = 0;
+            awayWickets = 0;
+            awayBalls = 0; // Ensure balls are reset for the new innings
+            awayInningsCompleted = false; // Ensure innings are not marked as completed yet
+        
+            // Display a message indicating that the away team's innings have started
+            JOptionPane.showMessageDialog(this, "Away Team innings started! Target: " + awayTarget);
+            
+            // Set the isAwayTeam flag to true to switch context
+            isAwayTeam = true;
+            
+            // Update UI for the away team to start scoring
+            updateScoreLabels(); // Refresh score UI
+        }
+        private void addExtra() {
+            if (isAwayTeam) {
+                if (!awayInningsCompleted) {
+                    awayRuns += 1; // Each extra adds 1 run
+                    awayBalls++;
+        
+                    // Check if an over is completed
+                    if (awayBalls % 6 == 0) {
+                        promptBowlerChange();
+                    }
+        
+                    actionStack.push(() -> {
+                        awayRuns -= 1; // Undo action
+                        updateScoreLabels();
+                    });
+                    updateScoreLabels();
+                    checkTargetReached();
+                    checkInningsStatus();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Away Team innings already completed.");
+                }
+            } else {
+                if (!homeInningsCompleted) {
+                    homeRuns += 1; // Each extra adds 1 run
+                    homeBalls++;
+        
+                    // Check if an over is completed
+                    if (homeBalls % 6 == 0) {
+                        promptBowlerChange();
+                    }
+        
+                    actionStack.push(() -> {
+                        homeRuns -= 1; // Undo action
+                        updateScoreLabels();
+                    });
+                    updateScoreLabels();
+                    checkInningsStatus();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Home Team innings already completed.");
+                }
+            }
+        }
+        private void promptBowlerChange() {
+            if(crp == pos1){
+                crp = pos2;
+            }
+            else if(crp == pos2){
+                crp = pos1;
+            }
+            else{
+                crp = pos1;
+            }
+            String currentBowler = (String) bowlerComboBox.getSelectedItem(); // Get the current bowler
+        
+            // Get the list of bowlers excluding the current bowler
+            List<String> availableBowlers = new ArrayList<>();
+            for (int i = 0; i < bowlerComboBox.getItemCount(); i++) {
+                String bowler = bowlerComboBox.getItemAt(i);
+                if (!bowler.equals(currentBowler)) {
+                    availableBowlers.add(bowler);
+                }
+            }
+        
+            // Show a dialog to select a new bowler
+            String selectedBowler = (String) JOptionPane.showInputDialog(
+                this,
+                "Select a new bowler:",
+                "Change Bowler",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                availableBowlers.toArray(), // Populate with available bowlers
+                availableBowlers.isEmpty() ? null : availableBowlers.get(0) // Default selection
+            );
+        
+            // Update the bowlerComboBox if a new bowler is selected
+            if (selectedBowler != null) {
+                bowlerComboBox.setSelectedItem(selectedBowler);
+            }
+        }
+
+        private void undoLastAction() {
+            if (!actionStack.isEmpty()) {
+                actionStack.pop().undo();
+            }
+        }
+
+        private void updateScoreLabels() {
+            // Update Home Team labels
+            homeScoreLabel.setText("Score: " + homeRuns + "/" + homeWickets + " (" + getOvers(homeBalls) + ")");
+            homeRunRateLabel.setText("Run Rate: " + getRunRate(homeRuns, homeBalls));
+            homeTargetLabel.setText("Target: " + (homeTarget != null ? homeTarget.toString() : "N/A"));
+
+            // Update Away Team labels
+            awayScoreLabel.setText("Score: " + awayRuns + "/" + awayWickets + " (" + getOvers(awayBalls) + ")");
+            awayRunRateLabel.setText("Run Rate: " + getRunRate(awayRuns, awayBalls));
+            awayTargetLabel.setText("Target: " + (awayTarget != null ? awayTarget.toString() : "N/A"));
+        }
+
+        private void checkInningsStatus() {
+    // Check for Home Team Innings Completion
+    if (homeWickets >= 10 || homeBalls >= 12) { // Assuming 2 overs = 12 balls for Home
+        if (!homeInningsCompleted) {
+            awayTarget = homeRuns + 1;  // Set the target for the away team here
+            JOptionPane.showMessageDialog(this, "Innings Completed! Total: " + homeRuns + ". Target : " + awayTarget);
+            m=1;
+            pos1 = m;
+            m++;
+            pos2 = m;
+            m++;
+            crp = pos1;
+            homeInningsCompleted = true;
+            isAwayTeam = true; // Switch to Away Team
+        }
+    }
+            // Check for Away Team Innings Completion
+            if (awayWickets >= 10 || awayBalls >= 12) { // Assuming 2 overs = 12 balls for Away
+                if (!awayInningsCompleted) {
+                    awayInningsCompleted = true;
+                    checkTargetReached(); // Check if target is reached at the end of the innings
+                }
+            }
+        }
+
+        private void checkTargetReached() {
+            if (awayTarget != null && awayRuns >= awayTarget && !awayInningsCompleted) {
+                // Indicate the innings is complete when the target is chased
+                awayInningsCompleted = true;
+                
+                // Show the innings completed message
+                JOptionPane.showMessageDialog(this, "Innings completed! Away Team Total Runs: " + awayRuns);
+                
+                // Calculate the number of wickets remaining
+                int wicketsRemaining = 10 - awayWickets;
+                String resultMessage = "Away Team wins by " + wicketsRemaining + " wickets!";
+                
+                // Show the result of the match in a subsequent dialog box
+                JOptionPane.showMessageDialog(this, resultMessage);
+                
+                // Optionally call the method to reset scores or handle the next steps
+                resetScores(); // Reset or potentially navigate to initial state
+            }
+        }
+        private String getOvers(int balls) {
+            int overs = balls / 6; // Calculate overs
+            int remainingBalls = balls % 6; // Remaining balls
+            return overs + "." + remainingBalls; // Format with overs and balls
+        }
+        private void add1todb(int pos){
+            try {
+                conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+                String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+                //System.out.println(words[0]+""+words[1]);
+                if(isAwayTeam){
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 1 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+                else{
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 1 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        private void add3todb(int pos){
+            try {
+                conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+                String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+                if(isAwayTeam){
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 3 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 1 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+                else{
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 3 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 3 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        private void add0todb(int pos){
+            try {
+                conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+                String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+                if(isAwayTeam){
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 0 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 0 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+                else{
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 0 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 0 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        private void add2todb(int pos){
+            try {
+                conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+                String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+                if(isAwayTeam){
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 2 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 2 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+                else{
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 2 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 2 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps2.setString(1,words[0]);
+                    ps2.setString(2,words[1]);
+                    ResultSet rs = ps2.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        private void add4todb(int pos){
+            try {
+                conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+                String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+                if(isAwayTeam){
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 4 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("update player_details set fours = fours + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps2.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 4 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps5 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps5.setString(1,words[0]);
+                    ps5.setString(2,words[1]);
+                    ResultSet rs = ps5.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+                else{
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 4 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("update player_details set fours = fours + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps2.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 4 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps5 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps5.setString(1,words[0]);
+                    ps5.setString(2,words[1]);
+                    ResultSet rs = ps5.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+        }
+        private void add6todb(int pos){
+            try {
+                conn = DriverManager.getConnection(v2.DB_URL, v2.DB_USER, v2.DB_PASSWORD);
+                String x = (String) bowlerComboBox.getSelectedItem();
+                String[] words = x.split(" ");
+                if(isAwayTeam){
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 6 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("update player_details set sixes = sixes + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s2+"')");
+                    ps2.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 6 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps5 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps5.setString(1,words[0]);
+                    ps5.setString(2,words[1]);
+                    ResultSet rs = ps5.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+                else{
+                    PreparedStatement ps = conn.prepareStatement("update player_details set runs = runs + 6 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps.executeUpdate();
+                    PreparedStatement ps1 = conn.prepareStatement("update player_details set balls = balls + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps1.executeUpdate();
+                    PreparedStatement ps2 = conn.prepareStatement("update player_details set sixes = sixes + 1 where position = '"+pos+"' and team_id in (select team_id from teams where team_name like '"+s1+"')");
+                    ps2.executeUpdate();
+                    PreparedStatement ps4 = conn.prepareStatement("update bowler_details set balls_bowled = balls_bowled + 1, runs_conceded = runs_conceded + 6 where  first_name= ? and last_name = ?");
+                    
+                    ps4.setString(1,words[0]);
+                    ps4.setString(2,words[1]);
+                    ps4.executeUpdate();
+                    PreparedStatement ps5 = conn.prepareStatement("select balls_bowled from bowler_details where first_name= ? and last_name = ?");
+                    ps5.setString(1,words[0]);
+                    ps5.setString(2,words[1]);
+                    ResultSet rs = ps5.executeQuery();
+                    int mm =0;
+                    while (rs.next()) {
+                        mm = rs.getInt("balls_bowled");
+                    }
+                    //System.out.println(getOvers(mm));
+                    String as = getOvers(mm);
+                    PreparedStatement ps3 = conn.prepareStatement("update bowler_details set overs_bowled = ? where first_name= ? and last_name = ?");
+                    ps3.setString(1,as);
+                    ps3.setString(2,words[0]);
+                    ps3.setString(3,words[1]);
+                    ps3.executeUpdate();
+                    String plsql = "{call update_sr}";
+
+                    // Create CallableStatement
+                    CallableStatement callableStatement = conn.prepareCall(plsql);
+                    callableStatement.execute();
+                }
+            } catch (SQLException ex) { 
+                ex.printStackTrace();
+            }
+        }
+
+        private void displayTeamLogos() {
+            // Display home team logo
+            BufferedImage homeLogo = getTeamLogo(CricketScoreUpdatingSystem.ht);
+            if (homeLogo != null) {
+                Image scaledHomeLogo = homeLogo.getScaledInstance(150, 150, Image.SCALE_SMOOTH); // Resize to fit JLabel
+                homeTeamLogoLabel.setIcon(new ImageIcon(scaledHomeLogo));
+            }
+    
+            // Display away team logo
+            BufferedImage awayLogo = getTeamLogo(CricketScoreUpdatingSystem.at);
+            if (awayLogo != null) {
+                Image scaledAwayLogo = awayLogo.getScaledInstance(150, 150, Image.SCALE_SMOOTH); // Resize to fit JLabel
+                awayTeamLogoLabel.setIcon(new ImageIcon(scaledAwayLogo));
+            }
+        }
+    
+        private BufferedImage getTeamLogo(String teamName) {
+            String query = "SELECT team_logo FROM teams WHERE team_name = ?";
+            try (PreparedStatement ps = conn.prepareStatement(query)) {
+                ps.setString(1, teamName);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    InputStream input = rs.getBinaryStream("team_logo");
+                    return ImageIO.read(input); // Convert BLOB to BufferedImage
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null; // Return null if no logo is found
+        }
+
+        private String getRunRate(int runs, int balls) {
+            double runRate = (balls == 0) ? 0.0 : (double) runs * 6 / balls; // Calculate run rate
+            return String.format("%.2f", runRate); // Format to two decimal places
+        }
+
+        public static void main(String[] args) {
+            new ScoreUpdateFrame();
+        }
+    }

@@ -1,0 +1,514 @@
+--PL/SQL function is a named PL/SQL block that can take input parameters, perform some operations, and return a single value
+--SYNTAX:
+CREATE [OR REPLACE] FUNCTION function_name
+    [ (parameter1 [mode] datatype, parameter2 [mode] datatype, ...) ]
+    RETURN return_datatype
+IS
+    -- Variable declarations (optional)
+    local_variable1 datatype;
+    local_variable2 datatype;
+    ...
+BEGIN
+    -- PL/SQL logic (the actual body of the function)
+    
+    -- Example: Assign value to local variable
+    local_variable1 := some_expression;
+    
+    -- Returning a value from the function
+    RETURN some_value;
+
+EXCEPTION
+    WHEN exception_name THEN
+        -- Exception handling (optional)
+        RETURN default_value;
+    WHEN OTHERS THEN
+        -- Generic exception handling
+        RETURN NULL;
+END function_name;
+
+--parameter1 [mode] datatype: The function may take zero or more input parameters. The [mode] can be:
+    IN: Input parameter (default).
+    OUT: Output parameter.
+    IN OUT: Both input and output.
+--Function Without Parameters
+--EXAMPLE:Get the Total Number of Accounts
+SQL> CREATE OR REPLACE FUNCTION get_total_accounts
+  2      RETURN NUMBER
+  3  IS
+  4      v_total_accounts NUMBER;
+  5  BEGIN
+  6      -- Query the database to count the number of accounts
+  7      SELECT COUNT(*) INTO v_total_accounts
+  8      FROM ACCOUNT;
+  9
+ 10      -- Return the result
+ 11      RETURN v_total_accounts;
+ 12  EXCEPTION
+ 13      WHEN OTHERS THEN
+ 14          -- Handle any exceptions gracefully
+ 15          RETURN 0; -- Return 0 if any error occurs
+ 16  END get_total_accounts;
+ 17  /
+
+Function created.
+SQL> BEGIN
+  2  DBMS_OUTPUT.PUT_LINE(GET_TOTAL_ACCOUNTS);
+  3  END;
+  4  /
+12
+
+PL/SQL procedure successfully completed.
+
+--Simple Function: A function that accepts parameters, processes them, and returns a value.
+--EXAMPLE:Getting the balance of an account
+
+SQL> CREATE OR REPLACE FUNCTION get_balance(p_acc_no IN NUMBER)
+  2      RETURN NUMBER
+  3  IS
+  4      v_balance NUMBER;
+  5  BEGIN
+  6      SELECT BALANCE INTO v_balance
+  7      FROM ACCOUNT
+  8      WHERE ACC_NO = p_acc_no;
+  9
+ 10      RETURN v_balance;
+ 11  EXCEPTION
+ 12      WHEN NO_DATA_FOUND THEN
+ 13          RETURN 0;
+ 14      WHEN OTHERS THEN
+ 15          RETURN NULL;
+ 16  END get_balance;
+ 17  /
+
+Function created.
+
+SQL> BEGIN
+  2  DBMS_OUTPUT.PUT_LINE(GET_BALANCE(12));
+  3  END;
+  4  /
+112233
+
+PL/SQL procedure successfully completed.
+--FUNCTION WITH MULTIPLE PARAMETERS
+--Return the number of accounts in the given branch that have a balance greater than the specified balance
+SQL> CREATE OR REPLACE FUNCTION get_accounts_by_balance (
+  2      p_br_name IN VARCHAR2,
+  3      p_balance IN FLOAT
+  4  ) RETURN NUMBER
+  5  IS
+  6      v_count NUMBER;
+  7  BEGIN
+  8      -- Count the number of accounts where the balance is greater than the given balance
+  9      SELECT COUNT(*) INTO v_count
+ 10      FROM ACCOUNT
+ 11      WHERE BR_NAME = p_br_name AND BALANCE > p_balance;
+ 12
+ 13      -- Return the count
+ 14      RETURN v_count;
+ 15  END get_accounts_by_balance;
+ 16  /
+
+Function created.
+
+SQL> SELECT * FROM ACCOUNT
+  2  ;
+
+    ACC_NO BR_NAME                 BALANCE
+---------- -------------------- ----------
+         9 SIVAKASI WEST              5000
+         7 SIVAKASI WEST               123
+        12 SIVAKASI WEST            112233
+        13 SIVAKASI WEST             10000
+        14 SIVAKASI EAST             15000
+        15 SIVAKASI EAST             25000
+        16 SIVAKASI WEST              1233
+        17 SIVAKASI WEST             33000
+        18 SIVAKASI MEPCO            23456
+        19 SIVAKASI MEPCO            45600
+        11 SIVAKASI MEPCO           230000
+
+    ACC_NO BR_NAME                 BALANCE
+---------- -------------------- ----------
+        23 SIVAKASI WEST             23456
+
+12 rows selected.
+
+SQL> SELECT GET_ACCOUNTS_BY_BALANCE('SIVAKASI WEST',20000) FROM DUAL;
+
+GET_ACCOUNTS_BY_BALANCE('SIVAKASIWEST',20000)
+---------------------------------------------
+                                            3
+
+--FUNCTION TO RETURN MORE THAN ONE VALUE
+--PL/SQL Function to Return a Record (Row)
+SQL> CREATE OR REPLACE FUNCTION get_account_record (
+  2      p_acc_no IN NUMBER   -- Input: Account Number
+  3  ) RETURN ACCOUNT%ROWTYPE
+  4  IS
+  5      v_account ACCOUNT%ROWTYPE;   -- Declare a variable of type ACCOUNT%ROWTYPE to store the record
+  6  BEGIN
+  7      -- Retrieve the record from the ACCOUNT table based on the ACC_NO
+  8      SELECT * INTO v_account
+  9      FROM ACCOUNT
+ 10      WHERE ACC_NO = p_acc_no;
+ 11
+ 12      -- Return the record
+ 13      RETURN v_account;
+ 14  EXCEPTION
+ 15      WHEN NO_DATA_FOUND THEN
+ 16          -- Handle the case where no record is found
+ 17          RETURN NULL;  -- Return NULL if no record is found
+ 18      WHEN OTHERS THEN
+ 19          -- Handle other errors
+ 20          RETURN NULL;
+ 21  END get_account_record;
+ 22  /
+
+Function created.
+
+SQL> DECLARE
+  2      v_account_record ACCOUNT%ROWTYPE;  -- Variable to hold the account record
+  3  BEGIN
+  4      -- Call the function to get the record for ACC_NO = 12
+  5      v_account_record := GET_ACCOUNT_RECORD(12);
+  6
+  7      -- Check if a record was returned (not NULL)
+  8      IF v_account_record.ACC_NO IS NOT NULL THEN
+  9          DBMS_OUTPUT.PUT_LINE('Account No: ' || v_account_record.ACC_NO);
+ 10          DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_account_record.BR_NAME);
+ 11          DBMS_OUTPUT.PUT_LINE('Balance: ' || v_account_record.BALANCE);
+ 12      ELSE
+ 13          DBMS_OUTPUT.PUT_LINE('No record found for the given account number.');
+ 14      END IF;
+ 15  END;
+ 16  /
+Account No: 12
+Branch Name: SIVAKASI WEST
+Balance: 112233
+
+PL/SQL procedure successfully completed.
+
+--RETURN TABLE IN PL SQL FUNCTION USING CURSOR
+
+SQL> CREATE OR REPLACE FUNCTION get_account_ref_cursor
+  2    RETURN SYS_REFCURSOR
+  3  IS
+  4    v_cursor SYS_REFCURSOR;  -- Declare a variable to hold the ref cursor
+  5  BEGIN
+  6    -- Open the cursor to select data from the ACCOUNT table
+  7    OPEN v_cursor FOR
+  8      SELECT * FROM ACCOUNT;
+  9
+ 10    -- Return the cursor
+ 11    RETURN v_cursor;
+ 12  END get_account_ref_cursor;
+ 13  /
+
+Function created.
+
+SQL> DECLARE
+  2    -- Declare a ref cursor variable
+  3    v_cursor SYS_REFCURSOR;
+  4    v_acc_no ACCOUNT.ACC_NO%TYPE;
+  5    v_br_name ACCOUNT.BR_NAME%TYPE;
+  6    v_balance ACCOUNT.BALANCE%TYPE;
+  7  BEGIN
+  8    -- Call the function to get the ref cursor
+  9    v_cursor := get_account_ref_cursor;
+ 10
+ 11    -- Fetch and display rows one by one
+ 12    LOOP
+ 13      FETCH v_cursor INTO v_acc_no, v_br_name, v_balance;
+ 14      EXIT WHEN v_cursor%NOTFOUND;  -- Exit when no more rows are available
+ 15
+ 16      -- Output the values using DBMS_OUTPUT
+ 17      DBMS_OUTPUT.PUT_LINE('Account No: ' || v_acc_no);
+ 18      DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_br_name);
+ 19      DBMS_OUTPUT.PUT_LINE('Balance: ' || v_balance);
+ 20      DBMS_OUTPUT.PUT_LINE('----------------------');
+ 21    END LOOP;
+ 22
+ 23    -- Close the cursor
+ 24    CLOSE v_cursor;
+ 25  END;
+ 26  /
+Account No: 9
+Branch Name: SIVAKASI WEST
+Balance: 5000
+----------------------
+Account No: 7
+Branch Name: SIVAKASI WEST
+Balance: 123
+----------------------
+Account No: 12
+Branch Name: SIVAKASI WEST
+Balance: 112233
+----------------------
+Account No: 13
+Branch Name: SIVAKASI WEST
+Balance: 10000
+----------------------
+Account No: 14
+Branch Name: SIVAKASI EAST
+Balance: 15000
+----------------------
+Account No: 15
+Branch Name: SIVAKASI EAST
+Balance: 25000
+----------------------
+Account No: 16
+Branch Name: SIVAKASI WEST
+Balance: 1233
+----------------------
+Account No: 17
+Branch Name: SIVAKASI WEST
+Balance: 33000
+----------------------
+Account No: 18
+Branch Name: SIVAKASI MEPCO
+Balance: 23456
+----------------------
+Account No: 19
+Branch Name: SIVAKASI MEPCO
+Balance: 45600
+----------------------
+Account No: 11
+Branch Name: SIVAKASI MEPCO
+Balance: 230000
+----------------------
+Account No: 23
+Branch Name: SIVAKASI WEST
+Balance: 23456
+----------------------
+
+PL/SQL procedure successfully completed.
+
+--PROCEDURE
+--Simple Procedure-NO PARAMETER
+--TO INSERT ROW INTO ACCOUNT TABLE
+
+SQL> CREATE OR REPLACE PROCEDURE simple_proc
+  2  IS
+  3  BEGIN
+  4    -- Insert a row into the ACCOUNT table
+  5    INSERT INTO ACCOUNT (ACC_NO, BR_NAME, BALANCE)
+  6    VALUES (1001, 'SIVAKASI EAST', 5000);
+  7    COMMIT;
+  8  END simple_proc;
+  9  /
+
+Procedure created.
+
+SQL> EXEC simple_proc;
+New account inserted with account number: 1001
+
+PL/SQL procedure successfully completed.
+
+--Procedure with IN Parameters
+SQL> CREATE OR REPLACE PROCEDURE proc_with_in_param (
+  2    p_acc_no IN NUMBER,           -- Input: Account Number
+  3    p_balance IN FLOAT            -- Input: Account Balance
+  4  )
+  5  IS
+  6  BEGIN
+  7    -- Insert a row into the ACCOUNT table with provided values
+  8    INSERT INTO ACCOUNT (ACC_NO, BR_NAME, BALANCE)
+  9    VALUES (p_acc_no, 'SIVAKASI WEST', p_balance);
+ 10    COMMIT;
+ 11  END proc_with_in_param;
+ 12  /
+
+Procedure created.
+
+SQL> EXEC proc_with_in_param(101, 2000);
+New account inserted with account number: 101
+
+PL/SQL procedure successfully completed.
+
+--Procedure with OUT Parameters
+SQL> CREATE OR REPLACE PROCEDURE proc_with_out_param (
+  2    p_acc_no IN NUMBER,          -- Input: Account Number
+  3    p_balance OUT FLOAT           -- Output: Account Balance
+  4  )
+  5  IS
+  6  BEGIN
+  7    -- Retrieve the balance for the given account number
+  8    SELECT BALANCE INTO p_balance
+  9    FROM ACCOUNT
+ 10    WHERE ACC_NO = p_acc_no;
+ 11  END proc_with_out_param;
+ 12  /
+
+Procedure created.
+
+SQL> DECLARE
+  2    v_balance FLOAT;
+  3  BEGIN
+  4    -- Call the procedure to retrieve balance
+  5    proc_with_out_param(101, v_balance);
+  6    DBMS_OUTPUT.PUT_LINE('Balance: ' || v_balance);
+  7  END;
+  8  /
+Balance: 2000
+
+PL/SQL procedure successfully completed.
+
+--Procedure with IN OUT Parameters
+SQL> CREATE OR REPLACE PROCEDURE proc_with_in_out_param (
+  2    p_acc_no IN OUT NUMBER,      -- Input/Output: Account Number
+  3    p_balance IN OUT FLOAT       -- Input/Output: Account Balance
+  4  )
+  5  IS
+  6  BEGIN
+  7    -- Modify the account balance
+  8    UPDATE ACCOUNT
+  9    SET BALANCE = p_balance + 1000
+ 10    WHERE ACC_NO = p_acc_no;
+ 11
+ 12    -- Return the updated balance
+ 13    SELECT BALANCE INTO p_balance
+ 14    FROM ACCOUNT
+ 15    WHERE ACC_NO = p_acc_no;
+ 16  END proc_with_in_out_param;
+ 17  /
+
+Procedure created.
+
+SQL> DECLARE
+  2    v_acc_no NUMBER := 101;
+  3    v_balance FLOAT := 1500;
+  4  BEGIN
+  5    -- Call the procedure to update and return balance
+  6    proc_with_in_out_param(v_acc_no, v_balance);
+  7    DBMS_OUTPUT.PUT_LINE('Updated Balance: ' || v_balance);
+  8  END;
+  9  /
+Account 101 updated. New Balance: 2500
+Updated Balance: 2500
+
+PL/SQL procedure successfully completed.
+
+--Procedure Returning a REF CURSOR
+SQL> CREATE OR REPLACE PROCEDURE proc_with_ref_cursor (
+  2    p_cursor OUT SYS_REFCURSOR   -- Output: REF CURSOR
+  3  )
+  4  IS
+  5  BEGIN
+  6    -- Open a cursor for the SELECT query
+  7    OPEN p_cursor FOR
+  8      SELECT * FROM ACCOUNT;
+  9  END proc_with_ref_cursor;
+ 10  /
+
+Procedure created.
+
+SQL> DECLARE
+  2    v_cursor SYS_REFCURSOR;
+  3    v_acc_no ACCOUNT.ACC_NO%TYPE;
+  4    v_br_name ACCOUNT.BR_NAME%TYPE;
+  5    v_balance ACCOUNT.BALANCE%TYPE;
+  6  BEGIN
+  7    -- Call the procedure to get the REF CURSOR
+  8    proc_with_ref_cursor(v_cursor);
+  9
+ 10    -- Fetch and display the rows
+ 11    LOOP
+ 12      FETCH v_cursor INTO v_acc_no, v_br_name, v_balance;
+ 13      EXIT WHEN v_cursor%NOTFOUND;
+ 14      DBMS_OUTPUT.PUT_LINE('Account No: ' || v_acc_no);
+ 15      DBMS_OUTPUT.PUT_LINE('Branch Name: ' || v_br_name);
+ 16      DBMS_OUTPUT.PUT_LINE('Balance: ' || v_balance);
+ 17      DBMS_OUTPUT.PUT_LINE('----------------------');
+ 18    END LOOP;
+ 19
+ 20    -- Close the cursor
+ 21    CLOSE v_cursor;
+ 22  END;
+ 23  /
+Account No: 9
+Branch Name: SIVAKASI WEST
+Balance: 5000
+----------------------
+Account No: 7
+Branch Name: SIVAKASI WEST
+Balance: 123
+----------------------
+Account No: 1001
+Branch Name: SIVAKASI EAST
+Balance: 5000
+----------------------
+Account No: 101
+Branch Name: SIVAKASI WEST
+Balance: 2500
+----------------------
+Account No: 12
+Branch Name: SIVAKASI WEST
+Balance: 112233
+----------------------
+Account No: 13
+Branch Name: SIVAKASI WEST
+Balance: 10000
+----------------------
+Account No: 14
+Branch Name: SIVAKASI EAST
+Balance: 15000
+----------------------
+Account No: 15
+Branch Name: SIVAKASI EAST
+Balance: 25000
+----------------------
+Account No: 16
+Branch Name: SIVAKASI WEST
+Balance: 1233
+----------------------
+Account No: 17
+Branch Name: SIVAKASI WEST
+Balance: 33000
+----------------------
+Account No: 18
+Branch Name: SIVAKASI MEPCO
+Balance: 23456
+----------------------
+Account No: 19
+Branch Name: SIVAKASI MEPCO
+Balance: 45600
+----------------------
+Account No: 11
+Branch Name: SIVAKASI MEPCO
+Balance: 230000
+----------------------
+Account No: 23
+Branch Name: SIVAKASI WEST
+Balance: 23456
+----------------------
+
+PL/SQL procedure successfully completed.
+--Procedure with Exception Handling
+
+
+SQL> CREATE OR REPLACE PROCEDURE proc_with_exception_handling (
+  2    p_acc_no IN NUMBER,
+  3    p_balance IN FLOAT
+  4  )
+  5  IS
+  6  BEGIN
+  7    -- Attempt to insert into ACCOUNT table
+  8    INSERT INTO ACCOUNT (ACC_NO, BR_NAME, BALANCE)
+  9    VALUES (p_acc_no, 'SIVAKASI EAST', p_balance);
+ 10    COMMIT;
+ 11
+ 12  EXCEPTION
+ 13    WHEN DUP_VAL_ON_INDEX THEN
+ 14      DBMS_OUTPUT.PUT_LINE('Error: Duplicate account number.');
+ 15    WHEN OTHERS THEN
+ 16      DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+ 17  END proc_with_exception_handling;
+ 18  /
+
+Procedure created.
+
+SQL> EXEC proc_with_exception_handling(101, 5000);
+Error: Duplicate account number.
+
+PL/SQL procedure successfully completed.
+

@@ -1,0 +1,137 @@
+-- Create user_ table
+CREATE TABLE user_ (
+    user_name VARCHAR2(50) PRIMARY KEY,
+    password VARCHAR2(50) NOT NULL,
+    role VARCHAR2(20) CHECK (role IN ('admin', 'employee', 'customer'))
+);
+
+-- Create Products table
+CREATE TABLE Products (
+    product_id NUMBER PRIMARY KEY,
+    name VARCHAR2(100) NOT NULL,
+    price NUMBER(10,2) NOT NULL,
+    stock NUMBER DEFAULT 0
+);
+
+-- Create Orders table
+CREATE TABLE Orders (
+    order_id NUMBER PRIMARY KEY,
+    user_name VARCHAR2(50) REFERENCES user_(user_name),
+    product_id NUMBER REFERENCES Products(product_id),
+    quantity NUMBER NOT NULL,
+    order_date DATE DEFAULT SYSDATE
+);
+
+-- Create sequence for product_id
+CREATE SEQUENCE product_id_seq START WITH 1 INCREMENT BY 1;
+
+-- Create sequence for order_id
+CREATE SEQUENCE order_id_seq START WITH 1 INCREMENT BY 1;
+
+-- Insert sample user_
+INSERT INTO user_ (user_name, password, role, full_name, age, dob) VALUES ('admin', 'admin123', 'admin', 'administrator', 25, TO_DATE('2023-05-15', 'YYYY-MM-DD'));
+INSERT INTO user_ (user_name, password, role, full_name, age, dob) VALUES ('emp1', 'emp123', 'employee', 'hema', 24, TO_DATE('2023-05-15', 'YYYY-MM-DD'));
+INSERT INTO user_ (user_name, password, role, full_name, age, dob) VALUES ('emp2', 'emp123', 'employee', 'ashika', 18, TO_DATE('2023-05-15', 'YYYY-MM-DD'));
+INSERT INTO user_ (user_name, password, role, full_name, age, dob) VALUES ('cust1', 'cust123', 'customer', 'priya', 20, TO_DATE('2023-05-15', 'YYYY-MM-DD'));
+INSERT INTO user_ (user_name, password, role, full_name, age, dob) VALUES ('cust2', 'cust123', 'customer', 'fathima', 22, TO_DATE('2023-05-15', 'YYYY-MM-DD'));
+
+-- Insert sample products
+INSERT INTO Products (product_id, name, price, stock) VALUES (1, 'Cotton Fabric', 299.99, 100);
+INSERT INTO Products (product_id, name, price, stock) VALUES (2, 'Silk Saree', 1999.99, 50);
+INSERT INTO Products (product_id, name, price, stock) VALUES (3, 'Wool Sweater', 799.99, 75);
+INSERT INTO Products (product_id, name, price, stock) VALUES (4, 'Linen Shirt', 499.99, 150);
+INSERT INTO Products (product_id, name, price, stock) VALUES (5, 'Denim Jeans', 899.99, 200);
+
+-- Insert sample orders
+INSERT INTO Orders (order_id, user_name, product_id, quantity, order_date)
+VALUES (1, 'cust1', 1, 2, SYSDATE);
+INSERT INTO Orders (order_id, user_name, product_id, quantity, order_date)
+VALUES (2, 'cust2', 2, 1, SYSDATE);
+INSERT INTO Orders (order_id, user_name, product_id, quantity, order_date)
+VALUES (3, 'cust1', 3, 3, SYSDATE-1);
+
+ALTER TABLE user_ ADD (
+    full_name VARCHAR2(100),
+    age NUMBER,
+    dob DATE
+);
+
+SQL> CREATE OR REPLACE TRIGGER update_age_trigger
+  2  BEFORE INSERT OR UPDATE OF dob ON User_
+  3  FOR EACH ROW
+  4  BEGIN
+  5      :NEW.age := TRUNC(MONTHS_BETWEEN(SYSDATE, :NEW.dob) / 12);
+  6  END;
+  7  /
+
+Trigger created.
+
+SQL> -- Create function to calculate total revenue
+SQL> CREATE OR REPLACE FUNCTION calculate_total_revenue
+  2  RETURN NUMBER IS
+  3      v_total_revenue NUMBER;
+  4  BEGIN
+  5      SELECT SUM(o.quantity * p.price)
+  6      INTO v_total_revenue
+  7      FROM Orders o
+  8      JOIN Products p ON o.product_id = p.product_id;
+  9
+ 10      RETURN NVL(v_total_revenue, 0);
+ 11  END;
+ 12  /
+
+Function created.
+
+SQL> -- Create procedure to get revenue by date range
+SQL> CREATE OR REPLACE PROCEDURE get_revenue_by_daterange (
+  2      p_start_date IN DATE,
+  3      p_end_date IN DATE,
+  4      p_revenue OUT NUMBER
+  5  ) IS
+  6  BEGIN
+  7      SELECT SUM(o.quantity * p.price)
+  8      INTO p_revenue
+  9      FROM Orders o
+ 10      JOIN Products p ON o.product_id = p.product_id
+ 11      WHERE o.order_date BETWEEN p_start_date AND p_end_date;
+ 12
+ 13      p_revenue := NVL(p_revenue, 0);
+ 14  END;
+ 15  /
+
+Procedure created.
+
+SQL> -- Create view for order revenue details
+SQL> CREATE OR REPLACE VIEW order_revenue_view AS
+  2  SELECT
+  3      o.order_id,
+  4      o.user_name,
+  5      p.name as product_name,
+  6      o.quantity,
+  7      p.price,
+  8      (o.quantity * p.price) as total_amount,
+  9      o.order_date
+ 10  FROM Orders o
+ 11  JOIN Products p ON o.product_id = p.product_id;
+
+View created.
+
+SQL>
+
+-- Commit the changes
+COMMIT;
+
+==========================================================================================
+
+PS C:\Users\Ashika fathima\OneDrive\Desktop\final> javac -cp ".;E:\swing\ojdbc11 (1).jar" TextileManagement.java
+PS C:\Users\Ashika fathima\OneDrive\Desktop\final> java -cp ".;E:\swing\ojdbc11 (1).jar" TextileManagement  
+
+// the file location is important, 
+
+cd desktop
+cd final
+
+idhu potuttu, then use javac -cp ".;E:\swi.... to compile and run
+
+vera location la poi compile pannitu irrukaadha da
+

@@ -169,3 +169,119 @@ CREATE TRIGGER update_innings_timestamp
     BEFORE UPDATE ON match_innings
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp();
+
+-- Add more fields to match_innings for better summary
+ALTER TABLE match_innings
+ADD COLUMN partnership_details JSONB DEFAULT '[]',
+ADD COLUMN phase_wise_score JSONB DEFAULT '{
+    "powerplay": {"runs": 0, "wickets": 0, "overs": 0},
+    "middle": {"runs": 0, "wickets": 0, "overs": 0},
+    "death": {"runs": 0, "wickets": 0, "overs": 0}
+}',
+ADD COLUMN run_distribution JSONB DEFAULT '{
+    "dots": 0, "ones": 0, "twos": 0, 
+    "threes": 0, "fours": 0, "sixes": 0
+}';
+
+-- Create table for match summary and key moments
+CREATE TABLE match_summary (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id),
+    innings_id BIGINT REFERENCES match_innings(id),
+    moment_type VARCHAR(50) CHECK (moment_type IN (
+        'wicket', 'boundary', 'milestone', 'partnership',
+        'powerplay', 'drs', 'injury', 'strategic_timeout'
+    )),
+    over_number DECIMAL(4,1),
+    description TEXT,
+    player_id BIGINT REFERENCES players(id),
+    secondary_player_id BIGINT REFERENCES players(id),
+    runs_scored INTEGER,
+    wickets INTEGER,
+    importance_level INTEGER CHECK (importance_level BETWEEN 1 AND 5),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create table for partnerships
+CREATE TABLE partnerships (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id),
+    innings_id BIGINT REFERENCES match_innings(id),
+    batsman1_id BIGINT REFERENCES players(id),
+    batsman2_id BIGINT REFERENCES players(id),
+    partnership_number INTEGER CHECK (partnership_number BETWEEN 1 AND 10),
+    runs INTEGER DEFAULT 0,
+    balls INTEGER DEFAULT 0,
+    is_unbroken BOOLEAN DEFAULT false,
+    start_over DECIMAL(4,1),
+    end_over DECIMAL(4,1),
+    run_rate DECIMAL(5,2),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create table for detailed ball tracking
+CREATE TABLE ball_tracking (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id),
+    innings_id BIGINT REFERENCES match_innings(id),
+    over_number INTEGER,
+    ball_number INTEGER CHECK (ball_number BETWEEN 1 AND 6),
+    bowler_id BIGINT REFERENCES players(id),
+    batsman_id BIGINT REFERENCES players(id),
+    runs_scored INTEGER DEFAULT 0,
+    extra_type VARCHAR(10),
+    extra_runs INTEGER DEFAULT 0,
+    is_wicket BOOLEAN DEFAULT false,
+    wicket_type VARCHAR(30),
+    fielder_id BIGINT REFERENCES players(id),
+    commentary TEXT,
+    ball_speed INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(match_id, innings_id, over_number, ball_number)
+);
+
+-- Create view for match summary
+CREATE VIEW match_summary_view AS
+SELECT 
+    m.id as match_id,
+    m.match_date,
+    t1.name as team1_name,
+    t2.name as team2_name,
+    tw.name as toss_winner,
+    m.toss_decision,
+    mi1.total_runs as innings1_score,
+    mi1.wickets as innings1_wickets,
+    mi1.overs_completed as innings1_overs,
+    mi2.total_runs as innings2_score,
+    mi2.wickets as innings2_wickets,
+    mi2.overs_completed as innings2_overs,
+    w.name as winner_name,
+    m.result_margin,
+    m.result_type,
+    m.match_status
+FROM matches m
+JOIN teams t1 ON m.team1_id = t1.id
+JOIN teams t2 ON m.team2_id = t2.id
+JOIN teams tw ON m.toss_winner_id = tw.id
+LEFT JOIN teams w ON m.winner_id = w.id
+LEFT JOIN match_innings mi1 ON m.id = mi1.match_id AND mi1.innings_number = 1
+LEFT JOIN match_innings mi2 ON m.id = mi2.match_id AND mi2.innings_number = 2;
+
+-- Create function to calculate required run rate
+CREATE OR REPLACE FUNCTION calculate_required_rate(
+    target INTEGER,
+    current_score INTEGER,
+    total_overs DECIMAL,
+    overs_completed DECIMAL
+) RETURNS DECIMAL AS $$
+BEGIN
+    IF overs_completed >= total_overs OR current_score >= target THEN
+        RETURN 0;
+    ELSE
+        RETURN ROUND(
+            (target - current_score)::DECIMAL / (total_overs - overs_completed),
+            2
+        );
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

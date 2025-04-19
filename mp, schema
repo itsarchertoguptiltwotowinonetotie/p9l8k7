@@ -1,0 +1,171 @@
+-- Core Tables with Enhanced Constraints
+CREATE TABLE teams (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    short_name VARCHAR(10) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE players (
+    id BIGSERIAL PRIMARY KEY,
+    team_id BIGINT REFERENCES teams(id),
+    name TEXT NOT NULL,
+    jersey_number INTEGER CHECK (jersey_number > 0 AND jersey_number <= 99),
+    role VARCHAR(20) CHECK (role IN ('batsman', 'bowler', 'all-rounder', 'wicket-keeper')),
+    batting_style VARCHAR(20) CHECK (batting_style IN ('right-hand', 'left-hand')),
+    bowling_style VARCHAR(50),
+    is_wicketkeeper BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(team_id, jersey_number)
+);
+
+-- Match Management with Strict Constraints
+CREATE TABLE matches (
+    id BIGSERIAL PRIMARY KEY,
+    team1_id BIGINT REFERENCES teams(id) NOT NULL,
+    team2_id BIGINT REFERENCES teams(id) NOT NULL,
+    match_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    venue TEXT NOT NULL,
+    scheduled_overs INTEGER NOT NULL CHECK (scheduled_overs IN (2, 5, 10, 20)),
+    toss_winner_id BIGINT REFERENCES teams(id) NOT NULL,
+    toss_decision VARCHAR(4) NOT NULL CHECK (toss_decision IN ('Bat', 'Bowl')),
+    current_innings INTEGER DEFAULT 1 CHECK (current_innings IN (1, 2)),
+    target INTEGER CHECK (target > 0),
+    winner_id BIGINT REFERENCES teams(id),
+    result_margin INTEGER,
+    result_type VARCHAR(20) CHECK (result_type IN ('runs', 'wickets', 'tie', 'abandoned')),
+    match_status VARCHAR(20) NOT NULL DEFAULT 'scheduled' 
+        CHECK (match_status IN ('scheduled', 'live', 'completed', 'abandoned')),
+    is_complete BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CHECK (team1_id != team2_id),
+    CHECK (toss_winner_id IN (team1_id, team2_id)),
+    CHECK (winner_id IN (team1_id, team2_id) OR winner_id IS NULL)
+);
+
+-- Detailed Innings Statistics
+CREATE TABLE match_innings (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id) NOT NULL,
+    innings_number INTEGER NOT NULL CHECK (innings_number IN (1, 2)),
+    batting_team_id BIGINT REFERENCES teams(id) NOT NULL,
+    bowling_team_id BIGINT REFERENCES teams(id) NOT NULL,
+    total_runs INTEGER NOT NULL DEFAULT 0 CHECK (total_runs >= 0),
+    wickets INTEGER NOT NULL DEFAULT 0 CHECK (wickets >= 0 AND wickets <= 10),
+    overs_completed DECIMAL(4,1) DEFAULT 0 CHECK (overs_completed >= 0),
+    extras_byes INTEGER DEFAULT 0 CHECK (extras_byes >= 0),
+    extras_leg_byes INTEGER DEFAULT 0 CHECK (extras_leg_byes >= 0),
+    extras_wides INTEGER DEFAULT 0 CHECK (extras_wides >= 0),
+    extras_no_balls INTEGER DEFAULT 0 CHECK (extras_no_balls >= 0),
+    extras_penalty INTEGER DEFAULT 0 CHECK (extras_penalty >= 0),
+    total_extras INTEGER DEFAULT 0 CHECK (total_extras >= 0),
+    boundary_fours INTEGER DEFAULT 0 CHECK (boundary_fours >= 0),
+    boundary_sixes INTEGER DEFAULT 0 CHECK (boundary_sixes >= 0),
+    dot_balls INTEGER DEFAULT 0 CHECK (dot_balls >= 0),
+    current_partnership_runs INTEGER DEFAULT 0 CHECK (current_partnership_runs >= 0),
+    current_partnership_balls INTEGER DEFAULT 0 CHECK (current_partnership_balls >= 0),
+    powerplay_runs INTEGER DEFAULT 0 CHECK (powerplay_runs >= 0),
+    powerplay_wickets INTEGER DEFAULT 0 CHECK (powerplay_wickets >= 0),
+    is_complete BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(match_id, innings_number),
+    CHECK (batting_team_id != bowling_team_id),
+    CHECK (batting_team_id IN (SELECT team1_id FROM matches WHERE id = match_id) 
+           OR batting_team_id IN (SELECT team2_id FROM matches WHERE id = match_id))
+);
+
+-- Detailed Batting Statistics
+CREATE TABLE batting_performances (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id) NOT NULL,
+    innings_id BIGINT REFERENCES match_innings(id) NOT NULL,
+    player_id BIGINT REFERENCES players(id) NOT NULL,
+    batting_position INTEGER NOT NULL CHECK (batting_position BETWEEN 1 AND 11),
+    runs_scored INTEGER DEFAULT 0 CHECK (runs_scored >= 0),
+    balls_faced INTEGER DEFAULT 0 CHECK (balls_faced >= 0),
+    fours INTEGER DEFAULT 0 CHECK (fours >= 0),
+    sixes INTEGER DEFAULT 0 CHECK (sixes >= 0),
+    is_out BOOLEAN DEFAULT false,
+    dismissal_type VARCHAR(30) CHECK (
+        dismissal_type IN (
+            'bowled', 'caught', 'lbw', 'run out', 'stumped',
+            'hit wicket', 'retired hurt', 'retired out',
+            'obstructing the field', 'timed out', 'handled the ball'
+        )
+    ),
+    bowler_id BIGINT REFERENCES players(id),
+    fielder_id BIGINT REFERENCES players(id),
+    dismissal_description TEXT,
+    dot_balls INTEGER DEFAULT 0 CHECK (dot_balls >= 0),
+    singles INTEGER DEFAULT 0 CHECK (singles >= 0),
+    doubles INTEGER DEFAULT 0 CHECK (doubles >= 0),
+    threes INTEGER DEFAULT 0 CHECK (threes >= 0),
+    is_retired_hurt BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(match_id, innings_id, player_id)
+);
+
+-- Detailed Bowling Statistics
+CREATE TABLE bowling_performances (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id) NOT NULL,
+    innings_id BIGINT REFERENCES match_innings(id) NOT NULL,
+    player_id BIGINT REFERENCES players(id) NOT NULL,
+    overs_bowled DECIMAL(4,1) DEFAULT 0 CHECK (overs_bowled >= 0),
+    maidens INTEGER DEFAULT 0 CHECK (maidens >= 0),
+    runs_conceded INTEGER DEFAULT 0 CHECK (runs_conceded >= 0),
+    wickets INTEGER DEFAULT 0 CHECK (wickets >= 0),
+    dot_balls INTEGER DEFAULT 0 CHECK (dot_balls >= 0),
+    boundaries_conceded INTEGER DEFAULT 0 CHECK (boundaries_conceded >= 0),
+    wides INTEGER DEFAULT 0 CHECK (wides >= 0),
+    no_balls INTEGER DEFAULT 0 CHECK (no_balls >= 0),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(match_id, innings_id, player_id)
+);
+
+-- Ball-by-Ball Details
+CREATE TABLE balls (
+    id BIGSERIAL PRIMARY KEY,
+    match_id BIGINT REFERENCES matches(id) NOT NULL,
+    innings_id BIGINT REFERENCES match_innings(id) NOT NULL,
+    over_number INTEGER CHECK (over_number >= 0),
+    ball_number INTEGER CHECK (ball_number BETWEEN 1 AND 6),
+    bowler_id BIGINT REFERENCES players(id) NOT NULL,
+    batsman_id BIGINT REFERENCES players(id) NOT NULL,
+    non_striker_id BIGINT REFERENCES players(id) NOT NULL,
+    runs_scored INTEGER DEFAULT 0 CHECK (runs_scored BETWEEN 0 AND 6),
+    extras_type VARCHAR(10) CHECK (extras_type IN ('wide', 'no-ball', 'bye', 'leg-bye')),
+    extras_runs INTEGER DEFAULT 0 CHECK (extras_runs >= 0),
+    is_wicket BOOLEAN DEFAULT false,
+    wicket_type VARCHAR(30),
+    wicket_player_id BIGINT REFERENCES players(id),
+    fielder_id BIGINT REFERENCES players(id),
+    shot_type VARCHAR(30),
+    is_boundary BOOLEAN DEFAULT false,
+    is_free_hit BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(match_id, innings_id, over_number, ball_number)
+);
+
+-- Automatic Timestamp Updates
+CREATE OR REPLACE FUNCTION update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_match_timestamp
+    BEFORE UPDATE ON matches
+    FOR EACH ROW
+    EXECUTE FUNCTION update_timestamp();
+
+CREATE TRIGGER update_innings_timestamp
+    BEFORE UPDATE ON match_innings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_timestamp();

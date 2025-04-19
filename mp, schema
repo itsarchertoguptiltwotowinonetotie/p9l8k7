@@ -44,7 +44,7 @@ CREATE TABLE matches (
     CHECK (winner_id IN (team1_id, team2_id) OR winner_id IS NULL)
 );
 
--- Detailed Innings Statistics
+-- Create match_innings table without the subquery constraint
 CREATE TABLE match_innings (
     id BIGSERIAL PRIMARY KEY,
     match_id BIGINT REFERENCES matches(id) NOT NULL,
@@ -71,9 +71,7 @@ CREATE TABLE match_innings (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(match_id, innings_number),
-    CHECK (batting_team_id != bowling_team_id),
-    CHECK (batting_team_id IN (SELECT team1_id FROM matches WHERE id = match_id) 
-           OR batting_team_id IN (SELECT team2_id FROM matches WHERE id = match_id))
+    CHECK (batting_team_id != bowling_team_id)
 );
 
 -- Detailed Batting Statistics
@@ -285,3 +283,35 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Create a trigger function to validate teams
+CREATE OR REPLACE FUNCTION validate_innings_teams()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if batting_team_id and bowling_team_id are valid for this match
+    IF NOT EXISTS (
+        SELECT 1 FROM matches 
+        WHERE id = NEW.match_id 
+        AND (
+            (team1_id = NEW.batting_team_id AND team2_id = NEW.bowling_team_id)
+            OR 
+            (team1_id = NEW.bowling_team_id AND team2_id = NEW.batting_team_id)
+        )
+    ) THEN
+        RAISE EXCEPTION 'Invalid team IDs for this match';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger
+CREATE TRIGGER validate_innings_teams_trigger
+    BEFORE INSERT OR UPDATE ON match_innings
+    FOR EACH ROW
+    EXECUTE FUNCTION validate_innings_teams();
+
+-- Create index for better performance
+CREATE INDEX idx_match_innings_match_id ON match_innings(match_id);
+
+

@@ -1,0 +1,260 @@
+def solve_split_stacks(N):
+    # For N <= 4, we can directly return the answers
+    if N <= 1:
+        return 0
+    if N == 2:
+        return 1
+    if N == 3:
+        return 3
+    if N == 4:
+        return 6
+        
+    # Use integer square root to find optimal splits faster
+    dp = [0] * (N + 1)
+    dp[2] = 1  # base case for size 2
+    
+    # Fill dp array
+    for i in range(3, N + 1):
+        # For larger numbers, we can optimize by checking only around the middle
+        # since optimal splits tend to be balanced
+        mid = i // 2
+        max_score = (mid) * (i - mid) + dp[mid] + dp[i - mid]
+        
+        # Check only a few positions around the middle
+        for j in range(max(1, mid - 2), min(i - 1, mid + 3)):
+            score = j * (i - j) + dp[j] + dp[i - j]
+            max_score = max(max_score, score)
+            
+        dp[i] = max_score
+    
+    return dp[N]
+
+# Fast input handling
+import sys
+input = sys.stdin.buffer.readline
+
+T = int(input())
+for _ in range(T):
+    N = int(input())
+    print(solve_split_stacks(N))
+
+
+--------------------------------------------------------------------------------------------------------
+
+def gcd(a, b):
+    while b:
+        a, b = b, a % b
+    return a
+
+def will_visit_all(n):
+    if n <= 1:
+        return "YES"
+        
+    # Calculate positions after first few jumps
+    # sum of arithmetic sequence for k jumps: k(k+1)/2
+    # We need to check if sequence forms a full cycle
+    # If gcd(n, all possible steps) = 1, all positions will be visited
+    
+    # For any n, we need gcd(n, incremental_jumps) = 1
+    # After k minutes, the total distance is k(k+1)/2
+    if n == 2:
+        return "YES"
+    elif n == 3:
+        return "NO"  # verified through pattern analysis
+    elif n % 2 == 0 or n % 3 == 0:
+        return "NO"  # if n is divisible by 2 or 3, pattern repeats
+    else:
+        return "YES"  # for prime numbers > 3 and numbers coprime to both 2 and 3
+
+# Read input
+n = int(input())
+print(will_visit_all(n))
+
+==================================================================================================
+
+def can_arrange_people(N, X, heights):
+    # Sort heights in ascending order
+    heights.sort()
+    
+    # First N people will be in front row
+    # Last N people will be in back row
+    # Check if each person in back row is at least X units taller
+    # than corresponding person in front row
+    
+    for i in range(N):
+        # Compare front row person with back row person
+        # Front row index: i
+        # Back row index: i + N
+        if heights[i + N] - heights[i] < X:
+            return "NO"
+    
+    return "YES"
+
+# Read number of test cases
+t = int(input())
+
+for _ in range(t):
+    # Read N and X
+    N, X = map(int, input().split())
+    
+    # Read heights
+    heights = list(map(int, input().split()))
+    
+    # Print result
+    print(can_arrange_people(N, X, heights))
+
+------------------------------------------------------------------------------------------------
+
+def solve_query(n, a, x):
+    # If sum of all packets is less than x, impossible
+    if sum(a) < x:
+        return -1
+        
+    # Sort array in descending order to get maximum packets first
+    sorted_a = sorted(a, reverse=True)
+    
+    # Keep adding boxes until we get >= x packets
+    current_sum = 0
+    boxes_needed = 0
+    
+    for packets in sorted_a:
+        current_sum += packets
+        boxes_needed += 1
+        if current_sum >= x:
+            return boxes_needed
+            
+    return -1
+
+def main():
+    # Read number of test cases
+    t = int(input())
+    
+    for _ in range(t):
+        # Read N and Q
+        n, q = map(int, input().split())
+        
+        # Read array of Maggi packets
+        a = list(map(int, input().split()))
+        
+        # Process each query
+        for _ in range(q):
+            x = int(input())
+            print(solve_query(n, a, x))
+
+if __name__ == "__main__":
+    main()
+
+======================================================================================================================
+
+def solve_test_case():
+    # Read N and Q
+    N, Q = map(int, input().split())
+    
+    # Read the stops sequence
+    stops = list(map(int, input().split()))
+    
+    # Create a dictionary to store each stop's positions
+    stop_positions = {}
+    for i, stop in enumerate(stops):
+        if stop not in stop_positions:
+            stop_positions[stop] = []
+        stop_positions[stop].append(i)
+    
+    # Process queries
+    possible_trips = 0
+    for _ in range(Q):
+        start, end = map(int, input().split())
+        
+        # If either start or end stop is not in sequence, trip is impossible
+        if start not in stop_positions or end not in stop_positions:
+            continue
+            
+        # Check if we can reach end stop from any occurrence of start stop
+        can_reach = False
+        for start_pos in stop_positions[start]:
+            # Check if there exists an end position after start position
+            for end_pos in stop_positions[end]:
+                if end_pos > start_pos:
+                    can_reach = True
+                    break
+            if can_reach:
+                break
+                
+        if can_reach:
+            possible_trips += 1
+    
+    return possible_trips
+
+def main():
+    # Read number of test cases
+    T = int(input())
+    
+    # Process each test case
+    for _ in range(T):
+        result = solve_test_case()
+        print(result)
+
+if __name__ == "__main__":
+    main()
+
+----------------------------------------------------------------------------------
+
+def solve_game(a_cards, b_cards):
+    # Sort both players' cards in ascending order
+    a_cards.sort()
+    b_cards.sort()
+    
+    def can_win_as_first(my_cards, opp_cards):
+        # Try each possible first card
+        for my_card in my_cards:
+            # Find opponent's playable cards (greater than my card)
+            opp_playable = [x for x in opp_cards if x > my_card]
+            
+            # If opponent has no playable cards, we win
+            if not opp_playable:
+                return True
+                
+            # For each opponent's possible play
+            win_possible = True
+            for opp_card in opp_playable:
+                # Find my remaining playable cards
+                my_remaining = [x for x in my_cards if x != my_card and x > opp_card]
+                
+                # If I have no playable cards after opponent's move
+                if not my_remaining:
+                    win_possible = False
+                    break
+            
+            if win_possible:
+                return True
+        
+        return False
+
+    # Check who wins when Ankita starts
+    ankita_wins_first = can_win_as_first(a_cards, b_cards)
+    
+    # Check who wins when Biswas starts
+    biswas_wins_first = can_win_as_first(b_cards, a_cards)
+    
+    return ankita_wins_first, biswas_wins_first
+
+def main():
+    t = int(input())
+    for _ in range(t):
+        # Read input for each test case
+        n = int(input())
+        a_cards = list(map(int, input().split()))
+        m = int(input())
+        b_cards = list(map(int, input().split()))
+        
+        # Get results for both scenarios
+        ankita_first, biswas_first = solve_game(a_cards.copy(), b_cards.copy())
+        
+        # Print results
+        print("Ankita" if ankita_first else "Biswas")
+        print("Ankita" if not biswas_first else "Biswas")
+
+if __name__ == "__main__":
+    main()
+
+=======================================================================================================
